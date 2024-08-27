@@ -7,6 +7,7 @@ service UserService {
     rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
     rpc VerifyOtp(VerifyOtpRequest) returns (VerifyOtpResponse);
     rpc LoginUser(LoginUserRequest) returns (LoginResponse);
+    rpc LoginAdmin(LoginAdminRequest) returns (LoginAdminResponse);
 }
 
 
@@ -16,6 +17,13 @@ message CreateUserRequest {
     string full_name = 3;
     string password = 4;
  
+}
+
+message User {
+    int32 id = 1;
+    string username = 2;
+    string full_name = 3;
+    string email = 4;
 }
 
 message CreateUserResponse {
@@ -45,4 +53,16 @@ message LoginResponse{
     string email = 2;
     string jwt = 3;
     string message = 4;
+}
+
+
+message LoginAdminRequest{
+    string email = 1;
+    string password = 2;
+}
+
+
+message LoginAdminResponse{
+    string jwt = 1;
+    string message = 2;
 }

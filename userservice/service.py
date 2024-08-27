@@ -37,13 +37,25 @@ class APIclient:
     
     
     def login_user(self, email, password, provider):
-        
         request = user_service_pb2.LoginUserRequest(email=email,
                                                     password=password,
                                                     provider=provider
                                                    )
         
         return self.user_service_stub.LoginUser(request)
+    
+    
+    # Admin Login
+    
+    
+    def login_admin(self, email, password):
+        print("hai")
+        request = user_service_pb2.LoginAdminRequest(email=email,
+                                                     password=password
+                                                    )
+        
+        return self.user_service_stub.LoginAdmin(request)
+        
     
     
     

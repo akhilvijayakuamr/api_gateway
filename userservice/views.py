@@ -11,6 +11,7 @@ from grpc import RpcError
 
 client = APIclient()
 
+# User register
 
 class CreateUserView(APIView):
     def post(self, request):
@@ -26,14 +27,14 @@ class CreateUserView(APIView):
                             status=status.HTTP_400_BAD_REQUEST)
         
         try:
-            
             response = client.create_user(email=email,
                                         username=username,
                                         full_name=full_name,
                                         password=password
                                         )
-            
-            return Response({f"Response Message: {response.message}"}, status=status.HTTP_201_CREATED)
+            return Response({"Message": {response.message},
+                             "error":{response.error}
+                             }, status=status.HTTP_201_CREATED)
         
         except RpcError as e:
             return Response({
@@ -64,9 +65,9 @@ class CreateUserView(APIView):
         return (
             request.data.get('email'),
             request.data.get('username'),
-            request.data.get('full_name'),
+            request.data.get('name'),
             request.data.get('password'),
-            request.data.get('conform_password'),
+            request.data.get('confirmPassword'),
         )            
                 
     # validation Function           
@@ -114,7 +115,6 @@ class OtpVerification(APIView):
             
             return Response({f"Response Message: {response.message}"}, status=status.HTTP_201_CREATED)
         
-        
         except RpcError as e:
             return Response({
                 "error": f"gRPC error occurred: {e.details()}"
@@ -127,18 +127,17 @@ class OtpVerification(APIView):
             
             
             
-# Login view
+# User Login view
 
-class LoginView(APIView):
+class UserLoginView(APIView):
     
     def post(self, request):
         email = request.data.get('email')
         password = request.data.get('password')
         provider = request.data.get('provider')
-        
         if not email or not email.strip():
             return Response({'error':'Email Not Found Please Login Again'})
-        if not password or password.strip():
+        if not password or not password.strip():
             return Response({'error':'Password Not Found Please Login Again'})
         try:
             
@@ -147,7 +146,12 @@ class LoginView(APIView):
                                          provider=provider
                                         )
             
-            return Response({f"Response Message: {response.message}"}, status=status.HTTP_200_OK)
+            return Response({
+                    "message": response.message,
+                    "token": response.jwt,
+                    "id": response.id,
+                    "email": response.email
+                }, status=status.HTTP_200_OK)
         
         except RpcError as e:
             return Response({
@@ -159,3 +163,46 @@ class LoginView(APIView):
             return Response({
                 "error": f"An unexpected error occurred: {str(e)}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            
+
+# Admin Login view
+
+
+class AdminLoginView(APIView):
+    
+    def post(self, request):
+        email = request.data.get('email')
+        password = request.data.get('password')
+        
+        if not email or not email.strip():
+            return Response({'error':'Email Not Found Please Login Again'})
+        
+        if not password or not password.strip():
+            return Response({'error':'Password Not Found Please Login Again'})
+        
+        try:
+            
+            response = client.login_admin(email=email,
+                                          password=password
+                                         )
+            
+            return Response({
+                "message":response.message,
+                "token": response.jwt
+            }, status=status.HTTP_200_OK)
+            
+        except RpcError as e:
+            return Response({
+                "error": f"gRPC error occurred: {e.details()}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            
+        except Exception as e:
+            return Response({
+                "error": f"An unexpected error occurred: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+    
+
+
