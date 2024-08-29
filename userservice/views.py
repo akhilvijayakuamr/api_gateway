@@ -38,7 +38,7 @@ class CreateUserView(APIView):
         
         except RpcError as e:
             return Response({
-                "error": f"gRPC error occurred: {e.details()}"
+                "error": f"{e.details()}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
         except Exception as e:
@@ -117,13 +117,40 @@ class OtpVerification(APIView):
         
         except RpcError as e:
             return Response({
-                "error": f"gRPC error occurred: {e.details()}"
+                "error": f"{e.details()}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
         except Exception as e:
             return Response({
                 "error": f"An unexpected error occurred: {str(e)}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+ 
+# Resend OTP view           
+            
+class ResendOtp(APIView):
+    def post(self, request):
+        email = request.data.get('email')
+        if not email:
+            return Response("Please Register Again !!", status=status.HTTP_404_NOT_FOUND)
+        try:
+            response = client.resend(email=email)
+            
+            return Response(f"Response Message: {response.message}", status=status.HTTP_200_OK)
+        
+        except RpcError as e:
+            return Response({
+                "error": f"{e.details()}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+        except Exception as e:
+            return Response({
+                "error": f"An unexpected error occurred: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+        
+            
+            
             
             
             
@@ -155,7 +182,7 @@ class UserLoginView(APIView):
         
         except RpcError as e:
             return Response({
-                "error": f"gRPC error occurred: {e.details()}"
+                "error": f"{e.details()}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
             
@@ -194,7 +221,7 @@ class AdminLoginView(APIView):
             
         except RpcError as e:
             return Response({
-                "error": f"gRPC error occurred: {e.details()}"
+                "error": f"{e.details()}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
             
@@ -202,6 +229,32 @@ class AdminLoginView(APIView):
             return Response({
                 "error": f"An unexpected error occurred: {str(e)}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            
+            
+            
+            
+# User list view
+
+
+class UserListView(APIView):
+    
+    def get(self, request):
+        try:
+            response = client.get_all_users()
+            return Response(response.users, status=status.HTTP_200_OK)
+        
+        except RpcError as e:
+            return Response({
+                "error": f"{e.details()}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            
+        except Exception as e:
+            return Response({
+                "error": f"An unexpected error occurred: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
         
     
 

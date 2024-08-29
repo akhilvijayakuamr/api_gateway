@@ -33,6 +33,14 @@ class APIclient:
         return self.user_service_stub.VerifyOtp(request)
     
     
+    # Resend OTP
+    
+    def resend(self, email):
+        request = user_service_pb2.ResendOtpRequest(email=email)
+        
+        return self.user_service_stub.ResendOtp(request)
+    
+    
     # User Login
     
     
@@ -49,12 +57,19 @@ class APIclient:
     
     
     def login_admin(self, email, password):
-        print("hai")
         request = user_service_pb2.LoginAdminRequest(email=email,
                                                      password=password
                                                     )
         
         return self.user_service_stub.LoginAdmin(request)
+    
+    
+    def get_all_users(self):
+        request = user_service_pb2.UserListRequest()
+
+        return self.user_service_stub.UserList(request)
+    
+
         
     
     
