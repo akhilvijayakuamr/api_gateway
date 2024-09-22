@@ -1,15 +1,17 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .service import APIclient
+from .service import APIUserClient
 from grpc import RpcError
+from .serializers import UserListSerializer
+from api_gateway.auth import authorization
 
 
 
 # Create your views here.
 
 
-client = APIclient()
+client = APIUserClient()
 
 # User register
 
@@ -32,9 +34,7 @@ class CreateUserView(APIView):
                                         full_name=full_name,
                                         password=password
                                         )
-            return Response({"Message": {response.message},
-                             "error":{response.error}
-                             }, status=status.HTTP_201_CREATED)
+            return Response({"Message": {response.message}}, status=status.HTTP_201_CREATED)
         
         except RpcError as e:
             return Response({
@@ -173,11 +173,14 @@ class UserLoginView(APIView):
                                          provider=provider
                                         )
             
+            print(response)
+            
             return Response({
                     "message": response.message,
                     "token": response.jwt,
                     "id": response.id,
-                    "email": response.email
+                    "email": response.email,
+                    "profile_image":response.profile
                 }, status=status.HTTP_200_OK)
         
         except RpcError as e:
@@ -241,8 +244,157 @@ class UserListView(APIView):
     
     def get(self, request):
         try:
-            response = client.get_all_users()
-            return Response(response.users, status=status.HTTP_200_OK)
+            auth = authorization(request)
+            if auth.admin:
+                response = client.get_all_users()
+                serializer = UserListSerializer(response.users, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            else:
+                return Response({'error':'Autharization Denied'}, status=status.HTTP_401_UNAUTHORIZED)
+        except RpcError as e:
+            return Response({
+                "error": f"{e.details()}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            
+        except Exception as e:
+            return Response({
+                "error": f"An unexpected error occurred: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            
+            
+# block and unblock
+
+
+class BlockUnBlockView(APIView):
+    
+    
+    def post(self, request):
+        try:
+            auth = authorization(request)
+            if auth.admin:
+                user_id = request.data.get('userId')
+                response = client.block_unblock_user(user_id)
+                return Response({"message":response.message}, status=status.HTTP_200_OK)
+            else:
+                return Response({'error':'Autharization Denied'}, status=status.HTTP_401_UNAUTHORIZED)
+        except RpcError as e:
+            return Response({
+                "error": f"{e.details()}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:
+            return Response({
+                "error": f"An unexpected error occurred: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            
+            
+            
+# User profile data
+
+
+class UserProfileData(APIView):
+    def post(self, request):
+        try:
+            auth = authorization(request)
+            if auth.user:
+                user_id = request.data.get('userId')
+                response = client.get_profile(int(user_id))
+                data = {
+                    'id':str(response.id),
+                    'username':response.username,
+                    'full_name':response.full_name,
+                    'location':response.location,
+                    'bio':response.bio,
+                    'dob':response.bio,
+                    'profileImage':response.profileimage,
+                    'coverImage':response.coverimage
+                }
+                
+                print("data", data)
+                
+                return Response(data, status=status.HTTP_200_OK)
+            else:
+                return Response({'error':'Autharization Denied'}, status=status.HTTP_401_UNAUTHORIZED)  
+        except RpcError as e:
+            return Response({
+                "error": f"{e.details()}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:
+            return Response({
+                "error": f"An unexpected error occurred: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
+            
+            
+# User update view
+
+
+class UserUpdateView(APIView):
+    def post(self, request):
+        try:
+            auth = authorization(request)
+            
+            if auth.user:  
+                user_id = request.data.get('userId') if request.data.get('userId') else ''
+                username = request.data.get('username') if request.data.get('username') else ''
+                full_name = request.data.get('full_name') if request.data.get('full_name') else ''
+                location = request.data.get('location') if request.data.get('location') else ''
+                bio = request.data.get('bio') if request.data.get('bio') else ''
+                dob = request.data.get('dob') if request.data.get('dob') else ''
+                profile_image = request.FILES.get('profileImage') if request.FILES.get('profileImage') else b''
+                cover_image = request.FILES.get('coverImage') if request.FILES.get('coverImage') else b''
+                profile_image_bytes = profile_image.read() if profile_image else b''
+                cover_image_bytes = cover_image.read() if cover_image else b''
+                
+                try:
+                
+                    response = client.update_profile(user_id, username, full_name, location, bio, dob, profile_image_bytes, cover_image_bytes)
+                    return Response(f"{response.message}", status=status.HTTP_200_OK)
+                         
+                except RpcError as e:
+                    return Response({
+                     "error": f"{e.details()}"
+                    }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            
+                except Exception as e:
+                    return Response({
+                    "error": f"An unexpected error occurred: {str(e)}"
+                    }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                
+            else:
+                return Response({'error':'Autharization Denied'}, status=status.HTTP_401_UNAUTHORIZED) 
+        except authorization:
+            return Response({'error':'Autharization Denied'}, status=status.HTTP_401_UNAUTHORIZED)
+           
+            
+            
+
+# Google auth
+
+
+class GoogleLoginView(APIView):
+    def post(self, request):
+        email = request.data.get('email')
+        fullname = request.data.get('fullname')
+        
+        if not email or not email.strip():
+            return Response({'error':'Email Not Found Please Login Again'})
+        if not fullname or not fullname.strip():
+            return Response({'error':'Password Not Found Please Login Again'})
+        try:
+            
+            response = client.google_user(email=email,
+                                         fullname=fullname,
+                                        )
+            
+            return Response({
+                    "message": response.message,
+                    "token": response.jwt,
+                    "id": response.id,
+                    "email": response.email
+                }, status=status.HTTP_200_OK)
         
         except RpcError as e:
             return Response({
@@ -254,6 +406,64 @@ class UserListView(APIView):
             return Response({
                 "error": f"An unexpected error occurred: {str(e)}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            
+
+
+# User forgot email
+
+class UserForgotView(APIView):
+    def post(self, request):
+        email = request.data.get('email')
+        
+        if not email or not email.strip():
+            return Response({'error':'Email Not Found Please Login Agian'})
+        
+        try:
+            response = client.user_forgot(email)
+            return Response({"message": {response.message}
+                             }, status=status.HTTP_201_CREATED)
+        
+        except RpcError as e:
+            return Response({
+                "error": f"{e.details()}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+        except Exception as e:
+            return Response({
+                "error": f"An unexpected error occurred: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            
+# Change password view         
+            
+class ChangePassword(APIView):
+    def post(self, request):
+        email = request.data.get('email')
+        password = request.data.get('password')
+        
+        
+        if not password or not password.strip():
+            return Response("{'error':'Password Not Found Please Enter Password}")
+        
+        try:
+            response = client.change_password(email, password)
+            return Response({"message": {response.message}
+                             }, status=status.HTTP_201_CREATED)
+            
+            
+        except RpcError as e:
+            return Response({
+                "error": f"{e.details()}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+        except Exception as e:
+            return Response({
+                "error": f"An unexpected error occurred: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
         
         
     
