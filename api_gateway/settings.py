@@ -14,20 +14,30 @@ from pathlib import Path
 import os
 from decouple import config
 
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
+
+
 # SECURITY WARNING: keep the secret key used in production secret!
+
 SECRET_KEY = config('SECRET_KEY')
 
+
+
 # SECURITY WARNING: don't run with debug turned on in production!
+
 DEBUG = config('DEBUG', cast=bool, default=True)
 
 ALLOWED_HOSTS = []
+
 
 
 # Application definition
@@ -56,7 +66,15 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+
+
+
 ROOT_URLCONF = 'api_gateway.urls'
+
+
+
+# CORS
+
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
@@ -64,6 +82,8 @@ CORS_EXPOSE_HEADERS = ['Content-Type', 'X-CSRFToken']
 
 
 
+
+# CORS METHODS
 
 CORS_ALLOW_METHODS = [
     "DELETE",
@@ -73,6 +93,11 @@ CORS_ALLOW_METHODS = [
     "POST",
     "PUT",
 ]
+
+
+
+
+# CORS HEADERS
 
 CORS_ALLOW_HEADERS = [
     "accept",
@@ -87,10 +112,19 @@ CORS_ALLOW_HEADERS = [
 ]
 
 
+
+
+# CORS ALLOWED ORIGINS
+
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
 ]
+
+
+
+
+# TEMPLATES
 
 TEMPLATES = [
     {
@@ -108,7 +142,12 @@ TEMPLATES = [
     },
 ]
 
+
+
+
 WSGI_APPLICATION = 'api_gateway.wsgi.application'
+
+
 
 
 # Database
@@ -124,6 +163,8 @@ DATABASES = {
         'PORT': config('DB_PORT'),         # PostgreSQL port
     }
 }
+
+
 
 
 # Password validation
@@ -145,6 +186,8 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+
+
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
@@ -157,13 +200,23 @@ USE_I18N = True
 USE_TZ = True
 
 
+
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = 'static/'
 
+
+
+
+# MEDIA FILES
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field

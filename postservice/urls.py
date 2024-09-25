@@ -7,5 +7,5 @@ urlpatterns = [
     path('get_post/', views.GetUniquePost.as_view(), name="get_post"), #-> Get post
     path('like/', views.LikeApiView.as_view(), name="like_post"), #-> Like post
     path('comment/', views.CommentApiView.as_view(), name="comment_post"), #-> Comment post
-    
+    path('comment_replay/', views.CommentReply.as_view(), name="comment_replay"), #-> Comment replay
 ]

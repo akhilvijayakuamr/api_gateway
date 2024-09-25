@@ -9,6 +9,7 @@ class APIUserClient:
         self.user_service_stub = user_service_pb2_grpc.UserServiceStub(self.user_service_channel)
         
         
+        
     # User Register
         
     def create_user(self, email, username, full_name, password):
@@ -22,6 +23,8 @@ class APIUserClient:
         return self.user_service_stub.CreateUser(request)
     
     
+    
+    
     # Verify OTP
     
     def verify_otp(self, email, otp):
@@ -33,6 +36,8 @@ class APIUserClient:
         return self.user_service_stub.VerifyOtp(request)
     
     
+    
+    
     # Resend OTP
     
     def resend(self, email):
@@ -41,8 +46,9 @@ class APIUserClient:
         return self.user_service_stub.ResendOtp(request)
     
     
-    # User Login
     
+    
+    # User Login
     
     def login_user(self, email, password, provider):
         request = user_service_pb2.LoginUserRequest(email=email,
@@ -53,14 +59,17 @@ class APIUserClient:
         return self.user_service_stub.LoginUser(request)
     
     
-    # Admin Login
     
+    
+    # Admin Login
     
     def login_admin(self, email, password):
         request = user_service_pb2.LoginAdminRequest(email=email,
                                                      password=password
                                                     )
         return self.user_service_stub.LoginAdmin(request)
+    
+    
     
     
     # Get Allusers
@@ -71,11 +80,15 @@ class APIUserClient:
     
     
     
+    
+    
     # Autharization
     
     def check_auth(self, token):
         request = user_service_pb2.AuthRequest(token=token)
         return self.user_service_stub.Autherization(request)
+    
+    
     
     
     # block and unblock user
@@ -85,8 +98,9 @@ class APIUserClient:
         return self.user_service_stub.BlockUnblockUser(request)
     
     
-    # Get Userprofile datas
     
+    
+    # Get Userprofile datas
     
     def get_profile(self, user_id):
         request = user_service_pb2.ProfileDataRequest(id = user_id)
@@ -94,9 +108,9 @@ class APIUserClient:
 
 
 
+
+
     # User profile update
-    
-    
     
     def update_profile(self, user_id, username, full_name, location, bio, dob, profile, cover):
         request =  user_service_pb2.ProfileUpdateRequest(   id = int(user_id),
@@ -112,6 +126,8 @@ class APIUserClient:
                                                                 
     
     
+    
+    
     # Google auth
     
     def google_user(self, email, fullname):
@@ -122,15 +138,19 @@ class APIUserClient:
         return self.user_service_stub.GoogleUser(request)
     
     
-    # ForgotEmail
     
+    
+    # ForgotEmail
     
     def user_forgot(self, email):
         request = user_service_pb2.ForgoteEmailRequest(email=email)
         return self.user_service_stub.ForgotEmail(request)
     
-    # Change Email
     
+    
+    
+    
+    # Change Email
     
     def change_password(self, email, password):
         request = user_service_pb2.ChangePasswordRequest(email=email,
@@ -139,13 +159,15 @@ class APIUserClient:
     
     
     
+    
+    
     # Take user profile photo
-    
-    
-    
+
     def profile_photo(self, user_id):
         request = user_service_pb2.PostProfileRequest(user_id=user_id)
         return self.user_service_stub.PostProfile(request)
+    
+    
     
     
     
@@ -155,6 +177,9 @@ class APIUserClient:
         request = user_service_pb2.PostUniqueDataRequest(user_id = user_id)
         response = self.user_service_stub.PostUniqueData(request)    
         return response
+    
+    
+    
     
     
     # Take Comment user data

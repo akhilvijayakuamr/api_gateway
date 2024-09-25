@@ -11,7 +11,6 @@ class APIPostClient:
         
     # Post create
     
-    
     def create_post(self, id, title, content, link, post_image_bytes):
         request = post_service_pb2.CreatePostRequest(
             user_id = int(id),
@@ -35,8 +34,6 @@ class APIPostClient:
     
     # Get unique post
     
-    
-    
     def get_unique_post(self, post_id, user_id):
         request = post_service_pb2.GetUniquePostRequest(post_id=post_id,
                                                         user_id = user_id)
@@ -45,8 +42,6 @@ class APIPostClient:
     
     # Like post
     
-    
-    
     def like_post(self, post_id, user_id):
         request = post_service_pb2.LikePostRequest(post_id=post_id, user_id=user_id)
         return self.post_service_stub.LikePost(request)
@@ -54,7 +49,26 @@ class APIPostClient:
     
     # Comment post
     
-    
     def comment_post(self, post_id, user_id, content):
         request = post_service_pb2.CommentPostRequest(post_id=post_id, user_id=user_id, content=content)
         return self.post_service_stub.CommentPost(request)
+    
+    
+    # Replay Comment
+    
+    def reply_comment(self, user_id, mention_user_id, comment_id, mention_user_fullname, content):
+        request = post_service_pb2.CommentReplyRequest(user_id=user_id,
+                                                        mention_user_id=mention_user_id,
+                                                        comment_id=comment_id,
+                                                        mention_user_fullname=mention_user_fullname,
+                                                        content=content
+                                                        )
+    
+        return self.post_service_stub.CommentReply(request)
+    
+    
+    
+    
+    
+        
+        

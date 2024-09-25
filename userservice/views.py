@@ -10,8 +10,9 @@ from api_gateway.auth import authorization
 
 # Create your views here.
 
-
 client = APIUserClient()
+
+
 
 # User register
 
@@ -48,6 +49,8 @@ class CreateUserView(APIView):
             
             
     
+    
+    
     # validate password           
                 
     def is_valid_password(self, password):
@@ -57,6 +60,8 @@ class CreateUserView(APIView):
             any(c.islower() for c in password) and
             any(c.isdigit() for c in password)
         )
+    
+    
     
     
     # Extracting data
@@ -69,6 +74,10 @@ class CreateUserView(APIView):
             request.data.get('password'),
             request.data.get('confirmPassword'),
         )            
+           
+           
+           
+           
                 
     # validation Function           
                 
@@ -95,9 +104,10 @@ class CreateUserView(APIView):
     
     
     
+    
+    
 # OTP varification view
                     
-
 class OtpVerification(APIView):
     
     def post(self, request):
@@ -108,11 +118,9 @@ class OtpVerification(APIView):
             return Response({'error':'Please enter otp'},status=status.HTTP_400_BAD_REQUEST)
         
         try:
-            
             response = client.verify_otp(email=email,
                                          otp=otp
                                         )
-            
             return Response({f"Response Message: {response.message}"}, status=status.HTTP_201_CREATED)
         
         except RpcError as e:
@@ -124,6 +132,9 @@ class OtpVerification(APIView):
             return Response({
                 "error": f"An unexpected error occurred: {str(e)}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+           
+           
+           
             
  
 # Resend OTP view           
@@ -131,11 +142,12 @@ class OtpVerification(APIView):
 class ResendOtp(APIView):
     def post(self, request):
         email = request.data.get('email')
+        
         if not email:
             return Response("Please Register Again !!", status=status.HTTP_404_NOT_FOUND)
+        
         try:
             response = client.resend(email=email)
-            
             return Response(f"Response Message: {response.message}", status=status.HTTP_200_OK)
         
         except RpcError as e:
@@ -152,8 +164,6 @@ class ResendOtp(APIView):
             
             
             
-            
-            
 # User Login view
 
 class UserLoginView(APIView):
@@ -162,18 +172,18 @@ class UserLoginView(APIView):
         email = request.data.get('email')
         password = request.data.get('password')
         provider = request.data.get('provider')
+        
         if not email or not email.strip():
             return Response({'error':'Email Not Found Please Login Again'})
+        
         if not password or not password.strip():
             return Response({'error':'Password Not Found Please Login Again'})
+        
         try:
-            
             response = client.login_user(email=email,
                                          password=password,
                                          provider=provider
                                         )
-            
-            print(response)
             
             return Response({
                     "message": response.message,
@@ -196,8 +206,9 @@ class UserLoginView(APIView):
             
             
 
-# Admin Login view
 
+
+# Admin Login view
 
 class AdminLoginView(APIView):
     
@@ -227,7 +238,6 @@ class AdminLoginView(APIView):
                 "error": f"{e.details()}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
-            
         except Exception as e:
             return Response({
                 "error": f"An unexpected error occurred: {str(e)}"
@@ -239,18 +249,19 @@ class AdminLoginView(APIView):
             
 # User list view
 
-
 class UserListView(APIView):
     
     def get(self, request):
         try:
             auth = authorization(request)
+            
             if auth.admin:
                 response = client.get_all_users()
                 serializer = UserListSerializer(response.users, many=True)
                 return Response(serializer.data, status=status.HTTP_200_OK)
             else:
                 return Response({'error':'Autharization Denied'}, status=status.HTTP_401_UNAUTHORIZED)
+            
         except RpcError as e:
             return Response({
                 "error": f"{e.details()}"
@@ -263,9 +274,10 @@ class UserListView(APIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
             
+        
+        
             
 # block and unblock
-
 
 class BlockUnBlockView(APIView):
     
@@ -273,16 +285,19 @@ class BlockUnBlockView(APIView):
     def post(self, request):
         try:
             auth = authorization(request)
+            
             if auth.admin:
                 user_id = request.data.get('userId')
                 response = client.block_unblock_user(user_id)
                 return Response({"message":response.message}, status=status.HTTP_200_OK)
             else:
                 return Response({'error':'Autharization Denied'}, status=status.HTTP_401_UNAUTHORIZED)
+            
         except RpcError as e:
             return Response({
                 "error": f"{e.details()}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
         except Exception as e:
             return Response({
                 "error": f"An unexpected error occurred: {str(e)}"
@@ -290,9 +305,9 @@ class BlockUnBlockView(APIView):
             
             
             
+        
             
 # User profile data
-
 
 class UserProfileData(APIView):
     def post(self, request):
@@ -326,9 +341,11 @@ class UserProfileData(APIView):
                 "error": f"An unexpected error occurred: {str(e)}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
             
+   
+   
+   
             
 # User update view
-
 
 class UserUpdateView(APIView):
     def post(self, request):
@@ -365,14 +382,15 @@ class UserUpdateView(APIView):
                 
             else:
                 return Response({'error':'Autharization Denied'}, status=status.HTTP_401_UNAUTHORIZED) 
+            
         except authorization:
             return Response({'error':'Autharization Denied'}, status=status.HTTP_401_UNAUTHORIZED)
            
             
+    
             
 
 # Google auth
-
 
 class GoogleLoginView(APIView):
     def post(self, request):
@@ -410,6 +428,7 @@ class GoogleLoginView(APIView):
             
 
 
+
 # User forgot email
 
 class UserForgotView(APIView):
@@ -433,6 +452,9 @@ class UserForgotView(APIView):
             return Response({
                 "error": f"An unexpected error occurred: {str(e)}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            
+            
             
             
 # Change password view         

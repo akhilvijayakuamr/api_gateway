@@ -4,6 +4,9 @@ from userservice.service import APIUserClient
 
 client = APIUserClient()
 
+
+# Check Authorization
+
 def authorization(request):
     auth_header = request.headers.get('Authorization')
     if not auth_header or 'Bearer ' not in auth_header:

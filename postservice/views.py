@@ -10,13 +10,11 @@ from datetime import datetime
 
 # Create your views here.
 
-
 client = APIPostClient()
 userclient = APIUserClient()
 
 
 # Create Post
-
 
 class CreatePost(APIView):
     def post(self, request):
@@ -51,13 +49,9 @@ class CreatePost(APIView):
             return Response({'error':'Autharization Denied'}, status=status.HTTP_401_UNAUTHORIZED)
         
         
-
-
-
+        
 
 # Get all post
-
-
 
 class GetAllPost(APIView):
     def post(self, request):
@@ -69,7 +63,6 @@ class GetAllPost(APIView):
                 response = client.get_all_posts(user_id)
                 
                 all_posts = response.posts
-                print(all_posts)
                 
                 post_details = []
                 for post in all_posts:
@@ -86,17 +79,13 @@ class GetAllPost(APIView):
                         "date" :formatted_date,
                         "postimage" :post.postimage,
                         "profileimage":profile_response.profile_image if profile_response.profile_image else '',
-                        "like":post.like if post.like else False                     
+                        "like":post.like if post.like else False,
+                        'like_count':post.like_count if post.like_count else 0,
+                        'comment_count':post.comment_count if post.comment_count else 0
+                                             
                     }
+                    post_details.append(details)   
                     
-                    
-                    
-                    post_details.append(details)
-                    
-                print("post_details", post_details)
-                    
-                    
-                
                 serializer = PostSerializers(post_details, many=True)
                 if serializer.is_valid:
                     return Response(serializer.data, status=status.HTTP_200_OK)
@@ -116,11 +105,8 @@ class GetAllPost(APIView):
             
             
             
-            
-            
-            
+       
 # Get unique post
-
 
 class GetUniquePost(APIView):
     def post(self, request):
@@ -134,26 +120,45 @@ class GetUniquePost(APIView):
                 formatted_date = response.date[:10]
                 
                 comment_list = []
+                
                 for comment in response.comments:
                     comment_formatted_date = comment.date[:10]
                     comment_response = userclient.comment_data(comment.user_id)
                     
+                    replay_list = []
                     
+                    for reply in comment.replies:
+                        
+                        reply_response = userclient.comment_data(reply.user_id)
+                        
+                        # Replies all details
+                        reply_details = {
+                            "replay_id": reply.replay_id,
+                            "user_id": reply.user_id,
+                            "mention_user_id": reply.mention_user_id,
+                            "mention_user": reply.mention_user,
+                            "content": reply.content,
+                            "date": reply.date,
+                            "full_name":reply_response.full_name,
+                            "user_profile":reply_response.user_profile, 
+                        }
+                        
+                        replay_list.append(reply_details)
+                    
+                    # Comment all details 
                     details = {
                         "comment_id":comment.comment_id,
                         "user_id":comment.user_id,
                         "content":comment.content,
                         "date":comment_formatted_date,
                         "full_name":comment_response.full_name,
-                        "user_profile":comment_response.user_profile,  
+                        "user_profile":comment_response.user_profile, 
+                        "replies":replay_list
                     }
                     
                     comment_list.append(details)
-                    
-                    
-              
-                    
-                
+                      
+                # post all details
                 data = {
                     'post_id':response.post_id,
                     'user_id':response.user_id,
@@ -167,25 +172,26 @@ class GetUniquePost(APIView):
                     'full_name':profile_response.full_name,
                     'username':profile_response.username,
                     'like':response.like,
-                    'comments': comment_list,
-                    
+                    'like_count':response.like_count if response.like_count else 0,
+                    'comment_count':response.comment_count if response.comment_count else 0,
+                    'comments': comment_list
                 }
                 
                 serializer = PostSerializers(data=data)
-                print("Is serializer valid:", serializer.is_valid())
-                print("Serializer errors:", serializer.errors)
                 
-                if serializer.is_valid:
+                if serializer.is_valid():
                     return Response(serializer.data, status=status.HTTP_200_OK)
                 else:
-                    print("working not")
                     return Response("Data in not found", status=status.HTTP_404_NOT_FOUND)
+                
             else:
-                return Response({'error':'Autharization Denied'}, status=status.HTTP_401_UNAUTHORIZED)  
+                return Response({'error':'Autharization Denied'}, status=status.HTTP_401_UNAUTHORIZED) 
+             
         except RpcError as e:
             return Response({
                 "error": f"{e.details()}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
         except Exception as e:
             return Response({
                 "error": f"An unexpected error occurred: {str(e)}"
@@ -196,21 +202,23 @@ class GetUniquePost(APIView):
             
 # Like post
 
-
 class LikeApiView(APIView):
     def post(self, request):
         try:
             auth = authorization(request)
+            
             if auth.user:
                 post_id = request.data.get('postId')
                 user_id = request.data.get('userId')
                 response = client.like_post(int(post_id), int(user_id))
                 return Response(f"{response.message}", status=status.HTTP_201_CREATED)
+            else:
+                return Response({'error':'Autharization Denied'}, status=status.HTTP_401_UNAUTHORIZED)
+              
         except RpcError as e:
             return Response({
                 "error": f"{e.details()}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            
             
         except Exception as e:
             return Response({
@@ -224,21 +232,22 @@ class LikeApiView(APIView):
 
 class CommentApiView(APIView):
     def post(self, request):
-        print("it is working")
         try:
             auth = authorization(request)
+            
             if auth.user:
                 post_id = request.data.get('postId')
                 user_id = request.data.get('userId')
                 content = request.data.get('content')
                 response = client.comment_post(int(post_id), int(user_id), content)
-                print(response)
                 return Response(f"{response.message}", status=status.HTTP_201_CREATED)
+            else:
+                return Response({'error':'Autharization Denied'}, status=status.HTTP_401_UNAUTHORIZED) 
+             
         except RpcError as e:
             return Response({
                 "error": f"{e.details()}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            
             
         except Exception as e:
             return Response({
@@ -247,9 +256,40 @@ class CommentApiView(APIView):
             
             
             
-            
-            
-            
+# Comment Replay
 
 
+class CommentReply(APIView):
+    
+    def post(self, request):
+        try:
+            auth = authorization(request)
+            
+            if auth.user:
+                user_id = request.data.get('userId')
+                mention_user_id = request.data.get('mentionUserId')
+                comment_id = request.data.get('commentId')
+                mention_user_fullname = request.data.get('mentionUserFullName')
+                content = request.data.get('content')
+                response=client.reply_comment(int(user_id),
+                                      int(mention_user_id),
+                                      int(comment_id), 
+                                      mention_user_fullname, 
+                                      content)
+                return Response(f"{response.message}", status=status.HTTP_201_CREATED)  
+            else:
+                return Response({'error':'Autharization Denied'}, status=status.HTTP_401_UNAUTHORIZED)  
                 
+        except RpcError as e:
+            return Response({
+                "error": f"{e.details()}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+        except Exception as e:
+            return Response({
+                "error": f"An unexpected error occurred: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            
+            
+

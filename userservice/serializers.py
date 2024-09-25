@@ -1,5 +1,9 @@
 from rest_framework import serializers
 
+
+
+# User List Serializer
+
 class UserListSerializer(serializers.Serializer):
     id = serializers.CharField(max_length = 50)
     username = serializers.CharField(max_length = 50)
