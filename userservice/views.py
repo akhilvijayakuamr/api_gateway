@@ -5,12 +5,15 @@ from .service import APIUserClient
 from grpc import RpcError
 from .serializers import UserListSerializer
 from api_gateway.auth import authorization
+from postservice.service import APIPostClient
+from postservice.serilizers import PostSerializers
 
 
 
 # Create your views here.
 
 client = APIUserClient()
+post_client = APIPostClient()
 
 
 
@@ -316,18 +319,50 @@ class UserProfileData(APIView):
             if auth.user:
                 user_id = request.data.get('userId')
                 response = client.get_profile(int(user_id))
+                post = post_client.unique_users_posts(user_id)
+                all_posts = post.posts
+                
+                post_details = []
+                for post in all_posts:
+                    profile_response = client.profile_photo(post.user_id)
+                    
+                    formatted_date = post.date[:10]
+              
+                    details = {
+                        "post_id" :post.post_id,
+                        "user_id" :post.user_id,
+                        "title" : post.title,
+                        "content" :post.content,
+                        "link" :post.link,
+                        "date" :formatted_date,
+                        "postimage" :post.postimage,
+                        "profileimage":profile_response.profile_image if profile_response.profile_image else '',
+                        "like":post.like if post.like else False,
+                        'like_count':post.like_count if post.like_count else 0,
+                        'comment_count':post.comment_count if post.comment_count else 0
+                                             
+                    }
+                    post_details.append(details)   
+                    
+                serializer = PostSerializers(post_details, many=True)
+             
+                
+                if serializer.is_valid:
+                    posts = serializer.data
+                
+                
                 data = {
                     'id':str(response.id),
                     'username':response.username,
                     'full_name':response.full_name,
                     'location':response.location,
                     'bio':response.bio,
-                    'dob':response.bio,
+                    'dob':response.dob,
                     'profileImage':response.profileimage,
-                    'coverImage':response.coverimage
+                    'coverImage':response.coverimage,
+                    'posts':posts
+                    
                 }
-                
-                print("data", data)
                 
                 return Response(data, status=status.HTTP_200_OK)
             else:

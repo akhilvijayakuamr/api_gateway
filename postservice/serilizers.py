@@ -25,6 +25,7 @@ class CommentSerializer(serializers.Serializer):
     date = serializers.DateTimeField()
     full_name = serializers.CharField()
     user_profile = serializers.URLField(required=False, allow_blank=True)
+    reply_count = serializers.IntegerField(required=False)
     replies = ReplaySerializer(many=True, required=False)
 
 

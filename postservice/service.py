@@ -67,6 +67,15 @@ class APIPostClient:
         return self.post_service_stub.CommentReply(request)
     
     
+    # Unique User Posts
+    
+    
+    def unique_users_posts(self, user_id):
+        print("user_id",user_id)
+        request = post_service_pb2.UniqueUserPostsRequest(user_id=int(user_id))
+        return self.post_service_stub.UniqueUserPosts(request)
+    
+    
     
     
     

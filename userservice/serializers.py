@@ -11,6 +11,8 @@ class UserListSerializer(serializers.Serializer):
     email = serializers.EmailField()
     is_active = serializers.BooleanField()
     
+
+    
     
 
 

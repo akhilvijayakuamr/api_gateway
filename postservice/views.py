@@ -61,12 +61,16 @@ class GetAllPost(APIView):
                 user_id = request.data.get('userId')
                 
                 response = client.get_all_posts(user_id)
+            
                 
                 all_posts = response.posts
                 
                 post_details = []
                 for post in all_posts:
+                    print(post.user_id)
                     profile_response = userclient.profile_photo(post.user_id)
+                    print(profile_response)
+                    
                     
                     formatted_date = post.date[:10]
               
@@ -118,7 +122,7 @@ class GetUniquePost(APIView):
                 response = client.get_unique_post(int(post_id), int(user_id))
                 profile_response =  userclient.post_unique_data(response.user_id)
                 formatted_date = response.date[:10]
-                
+        
                 comment_list = []
                 
                 for comment in response.comments:
@@ -128,8 +132,8 @@ class GetUniquePost(APIView):
                     replay_list = []
                     
                     for reply in comment.replies:
-                        
                         reply_response = userclient.comment_data(reply.user_id)
+                        
                         
                         # Replies all details
                         reply_details = {
@@ -153,6 +157,7 @@ class GetUniquePost(APIView):
                         "date":comment_formatted_date,
                         "full_name":comment_response.full_name,
                         "user_profile":comment_response.user_profile, 
+                        "reply_count":comment.reply_count,
                         "replies":replay_list
                     }
                     
@@ -176,6 +181,8 @@ class GetUniquePost(APIView):
                     'comment_count':response.comment_count if response.comment_count else 0,
                     'comments': comment_list
                 }
+                
+                
                 
                 serializer = PostSerializers(data=data)
                 
