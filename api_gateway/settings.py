@@ -231,7 +231,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # RabbitMq 
 
-RABBITMQ_URL = 'amqp://guest:guest@172.17.0.2:5672/'
+RABBITMQ_URL = config('RABBITMQ_URL')
 
 # Channel layer
 
