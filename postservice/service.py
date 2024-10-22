@@ -76,6 +76,72 @@ class APIPostClient:
         return self.post_service_stub.UniqueUserPosts(request)
     
     
+    # Update Post
+    
+    
+    def update_post(self, id, user_id, title, content, link, post_image_bytes):
+        request = post_service_pb2.PostUpdateRequest(
+            post_id = int(id),
+            user_id = int(user_id),
+            title = title,
+            post_image = post_image_bytes,
+            content = content,
+            link = link
+        )
+        
+        return self.post_service_stub.PostUpdate(request)
+    
+    
+    # Comment Delete
+    
+    
+    def comment_delete(self, comment_id):
+        request = post_service_pb2.CommentDeleteRequest(comment_id = int(comment_id))
+        return self.post_service_stub.CommentDelete(request)
+    
+    
+    # Reply Delete
+    
+    def reply_delete(self, reply_id):
+        request = post_service_pb2.ReplyDeleteRequest(reply_id = int(reply_id))
+        return self.post_service_stub.ReplyDelete(request)
+    
+    
+    
+    # Post Delete
+    
+    
+    def delete_post(self, post_id):
+        request = post_service_pb2.PostDeleteRequest(post_id = int(post_id))
+        return self.post_service_stub.PostDelete(request)
+    
+    
+    
+     # Post Report    
+    
+    def report_post(self, post_id, report_user_id, reson):
+        print(post_id, report_user_id, reson)
+        request = post_service_pb2.PostReportRequest(post_id = int(post_id),
+                                                    report_user_id = int(report_user_id),
+                                                    reson = reson)
+        return self.post_service_stub.PostReport(request)
+    
+    
+    # Admin Get all post
+    
+    def admin_get_all_posts(self):
+        request = post_service_pb2.GetAllAdminPostRequest()
+        return self.post_service_stub.GetAllAdminPost(request)
+    
+    
+    
+    # Post Hide
+    
+    
+    def hide_post(self, post_id):
+        request = post_service_pb2.PostHideRequest(post_id = int(post_id))
+        return self.post_service_stub.PostHide(request)
+    
     
     
     

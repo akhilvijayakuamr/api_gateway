@@ -3,10 +3,11 @@ from rest_framework.response import Response
 from rest_framework import status
 from .service import APIUserClient
 from grpc import RpcError
-from .serializers import UserListSerializer
+from .serializers import UserListSerializer, UserSearchSerializer
 from api_gateway.auth import authorization
 from postservice.service import APIPostClient
 from postservice.serilizers import PostSerializers
+from communication_service.service import follow_notification
 
 
 
@@ -257,8 +258,11 @@ class UserListView(APIView):
     def get(self, request):
         try:
             auth = authorization(request)
-            
             if auth.admin:
+                response = client.get_all_users()
+                serializer = UserListSerializer(response.users, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            elif auth.user:
                 response = client.get_all_users()
                 serializer = UserListSerializer(response.users, many=True)
                 return Response(serializer.data, status=status.HTTP_200_OK)
@@ -318,8 +322,11 @@ class UserProfileData(APIView):
             auth = authorization(request)
             if auth.user:
                 user_id = request.data.get('userId')
-                response = client.get_profile(int(user_id))
-                post = post_client.unique_users_posts(user_id)
+                profile_id = request.data.get('profileId')
+                print("hais",user_id, profile_id)
+                response = client.get_profile(int(user_id), int(profile_id))
+                
+                post = post_client.unique_users_posts(profile_id)
                 all_posts = post.posts
                 
                 post_details = []
@@ -360,6 +367,9 @@ class UserProfileData(APIView):
                     'dob':response.dob,
                     'profileImage':response.profileimage,
                     'coverImage':response.coverimage,
+                    'follow':response.follow,
+                    'followers_count':response.followers_count,
+                    'following_count':response.following_count,
                     'posts':posts
                     
                 }
@@ -383,7 +393,7 @@ class UserProfileData(APIView):
 # User update view
 
 class UserUpdateView(APIView):
-    def post(self, request):
+    def put(self, request):
         try:
             auth = authorization(request)
             
@@ -518,6 +528,85 @@ class ChangePassword(APIView):
             return Response({
                 "error": f"An unexpected error occurred: {str(e)}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            
+            
+# User Follow
+
+
+class UserFollow(APIView):
+    def post(self, request):
+        user_id = request.data.get('userId')
+        follow_user_id = request.data.get('followUserId')
+        
+        if not user_id or not follow_user_id:
+             return Response("{'error':'The argument is not found'}")
+        
+        try:
+            response = client.follow_user(user_id, follow_user_id)
+            if response.message == "You are now following this user":
+                result = follow_notification(user_id, follow_user_id)
+                print(result)
+            return Response({"message": {response.message}
+                             }, status=status.HTTP_201_CREATED)
+            
+        except RpcError as e:
+            return Response({
+                "error": f"{e.details()}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+        except Exception as e:
+            return Response({
+                "error": f"An unexpected error occurred: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+
+# Search User
+
+class SearchUser(APIView):
+    def post(self, request):
+        query = request.data.get('query')
+        user_id = request.data.get('userId')
+
+        if not query or not user_id:
+            return Response("{'error':'The argument is not found'}", status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            response = client.search_user(query, user_id)
+            search_users = []
+            for user in response.searchdata:
+                user = {
+                    "id" : user.id,
+                    "full_name" : user.full_name,
+                    "username" : user.user_name,
+                    "user_profile" : user.user_profile
+                }
+
+                search_users.append(user)
+
+            serializer = UserSearchSerializer(search_users, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+            
+        except RpcError as e:
+            return Response({
+                "error": f"{e.details()}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+        except Exception as e:
+            return Response({
+                "error": f"An unexpected error occurred: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+
+
+
+            
+            
+         
+         
+        
+            
 
 
 

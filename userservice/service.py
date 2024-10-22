@@ -102,8 +102,9 @@ class APIUserClient:
     
     # Get Userprofile datas
     
-    def get_profile(self, user_id):
-        request = user_service_pb2.ProfileDataRequest(id = user_id)
+    def get_profile(self, user_id, profile_id):
+        request = user_service_pb2.ProfileDataRequest(id = user_id,
+                                                      profile_id = profile_id)
         return self.user_service_stub.ProfileData(request)
 
 
@@ -187,6 +188,30 @@ class APIUserClient:
     def comment_data(self, user_id):
         request = user_service_pb2.CommentUniqueDataRequest(user_id=user_id)
         return self.user_service_stub.CommentUniqueData(request)
+    
+    
+
+    
+    
+    # Follow User
+    
+    def follow_user(self, user_id, follow_user_id):
+        request = user_service_pb2.UserFollowRequest(user_id = int(user_id),
+                                                     follow_user_id = int(follow_user_id))
+        return self.user_service_stub.UserFollow(request)
+    
+
+
+
+
+    # Search user
+
+    def search_user(self, query, user_id):
+        request = user_service_pb2.UserSearchRequest(user_id = int(user_id),
+                                                     query = query)
+        return self.user_service_stub.UserSearch(request)
+
+    
     
     
         

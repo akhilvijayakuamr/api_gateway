@@ -11,8 +11,10 @@ urlpatterns = [
     path('user_list/', views.UserListView.as_view(), name="user_list"), #-> user list path
     path('block_unblock_user/', views.BlockUnBlockView.as_view(), name="block_unblock_user"), #-> user block unblock path
     path('profile/', views.UserProfileData.as_view(), name="profile"), #-> user profile data path
-    path('userprofileupdate/', views.UserUpdateView.as_view(), name="user_profile_update"), #-> user profile update
+    path('userprofileupdate/', views.UserUpdateView.as_view(), name="user_profile_update"), #-> user profile update path
     path('user_google/', views.GoogleLoginView.as_view(), name="google_login"), #-> google login path
     path('forgotemail/', views.UserForgotView.as_view(), name="forgotemail"), #-> User forgot email path
-    path('change_password/', views.ChangePassword.as_view(), name='change_password') #-> User change password
+    path('change_password/', views.ChangePassword.as_view(), name='change_password'), #-> User change password path
+    path('follow/', views.UserFollow.as_view(), name="follow"), #-> Follow user path
+    path('search/', views.SearchUser.as_view(), name="search"), #-> Search User
 ]

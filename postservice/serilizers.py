@@ -29,6 +29,16 @@ class CommentSerializer(serializers.Serializer):
     replies = ReplaySerializer(many=True, required=False)
 
 
+# Report Details serializer
+
+class ReportSerializer(serializers.Serializer):
+    report_id = serializers.IntegerField()
+    report_user_id = serializers.IntegerField()
+    reson =  serializers.CharField()
+    date = serializers.DateTimeField()
+    full_name = serializers.CharField()
+    user_profile = serializers.URLField(required=False, allow_blank=True)
+    
 #Post serializer
 
 class PostSerializers(serializers.Serializer):
@@ -44,7 +54,11 @@ class PostSerializers(serializers.Serializer):
     full_name = serializers.CharField(required=False, allow_blank=True)
     username = serializers.CharField(required=False, allow_blank=True)
     like = serializers.BooleanField(required=False, default=False)
+    is_delete = serializers.BooleanField(required=False, default=False)
     like_count = serializers.IntegerField(required=False, default=0)
     comment_count = serializers.IntegerField(required=False, default=0)
+    is_block = serializers.BooleanField(required=False, default=False)
+    is_report = serializers.BooleanField(required=False, default=False)
     comments = CommentSerializer(many=True, required=False)
+    reports = ReportSerializer(many=True, required=False)
     

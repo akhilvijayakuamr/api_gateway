@@ -23,6 +23,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('users/', include('userservice.urls')),  #-> Connect User service urls
     path('post/', include('postservice.urls')),   #-> Connect Post service urls
+    path('communication/', include('communication_service.urls')), #-> Connect Communication service urls
     
 ]
 

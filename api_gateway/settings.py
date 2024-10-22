@@ -49,10 +49,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'channels' ,
     'userservice',  #-> Register User service
     'rest_framework',   #-> Register Rest framework  
     'corsheaders',   #-> Register corsheaders
     'postservice', #-> Register Post service
+    'communication_service',  #-> Register Communication service
 ]
 
 MIDDLEWARE = [
@@ -146,6 +148,7 @@ TEMPLATES = [
 
 
 WSGI_APPLICATION = 'api_gateway.wsgi.application'
+ASGI_APPLICATION = 'api_gateway.asgi.application'
 
 
 
@@ -222,3 +225,18 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+
+
+# RabbitMq 
+
+RABBITMQ_URL = 'amqp://guest:guest@172.17.0.2:5672/'
+
+# Channel layer
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",  # Use InMemoryChannelLayer for development
+    },
+}
