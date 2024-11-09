@@ -13,15 +13,28 @@ class UserListSerializer(serializers.Serializer):
     
 
 
-# Chat user search
+# Chat user data
 
 
 
-class UserSearchSerializer(serializers.Serializer):
+class UserDataSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     full_name = serializers.CharField(max_length = 50)
     username = serializers.CharField(max_length = 50)
     user_profile = user_profile = serializers.URLField(required=False, allow_blank=True)
+    
+    
+
+
+# User followers and Followings 
+
+
+class UserFriendsSerializer(serializers.Serializer):
+    follower = UserDataSerializer(many=True, required=False)
+    followed = UserDataSerializer(many=True, required=False)
+    
+    
+
 
 
     

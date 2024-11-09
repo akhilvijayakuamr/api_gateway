@@ -5,9 +5,10 @@ from grpc import RpcError
 from api_gateway.auth import authorization
 from .service import APIPostClient
 from userservice.service import APIUserClient
-from . serilizers import PostSerializers
+from . serilizers import PostSerializers, CommentSerializer, ReplaySerializer
 from datetime import datetime
 from communication_service.service import like_notification, comment_notification
+import grpc
 
 
 # Create your views here.
@@ -47,8 +48,18 @@ class CreatePost(APIView):
                 
             else:
                 return Response({'error':'Autharization Denied'}, status=status.HTTP_401_UNAUTHORIZED) 
-        except authorization:
-            return Response({'error':'Autharization Denied'}, status=status.HTTP_401_UNAUTHORIZED)
+            
+        except RpcError as e:
+            if e.code() == grpc.StatusCode.UNAUTHENTICATED:
+                return Response("Authentication failed", status=status.HTTP_401_UNAUTHORIZED)
+            return Response({
+                "error": f"{e.details()}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+        except Exception as e:
+            return Response({
+                "error": f"An unexpected error occurred: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
         
         
         
@@ -59,6 +70,7 @@ class GetAllPost(APIView):
     def post(self, request):
         try:
             auth = authorization(request)
+            print("auth")
             if auth.user:
                 user_id = request.data.get('userId')
                 
@@ -97,6 +109,8 @@ class GetAllPost(APIView):
                     return Response("Data in not found", status=status.HTTP_404_NOT_FOUND)
                     
         except RpcError as e:
+            if e.code() == grpc.StatusCode.UNAUTHENTICATED:
+                return Response("Authentication failed", status=status.HTTP_401_UNAUTHORIZED)
             return Response({
                 "error": f"{e.details()}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -194,6 +208,8 @@ class GetUniquePost(APIView):
                 return Response({'error':'Autharization Denied'}, status=status.HTTP_401_UNAUTHORIZED) 
              
         except RpcError as e:
+            if e.code() == grpc.StatusCode.UNAUTHENTICATED:
+                return Response("Authentication failed", status=status.HTTP_401_UNAUTHORIZED)
             return Response({
                 "error": f"{e.details()}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -217,13 +233,18 @@ class LikeApiView(APIView):
                 post_id = request.data.get('postId')
                 user_id = request.data.get('userId')
                 response = client.like_post(int(post_id), int(user_id))
+
                 if (response.user_id != int(user_id) and response.message == 'like post'):
                     data=like_notification(response.user_id,user_id,post_id)
+
                 return Response(f"{response.message}", status=status.HTTP_201_CREATED)
+            
             else:
                 return Response({'error':'Autharization Denied'}, status=status.HTTP_401_UNAUTHORIZED)
               
         except RpcError as e:
+            if e.code() == grpc.StatusCode.UNAUTHENTICATED:
+                return Response("Authentication failed", status=status.HTTP_401_UNAUTHORIZED)
             return Response({
                 "error": f"{e.details()}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -248,14 +269,29 @@ class CommentApiView(APIView):
                 user_id = request.data.get('userId')
                 content = request.data.get('content')
                 response = client.comment_post(int(post_id), int(user_id), content)
+                comment_response = userclient.comment_data(response.id)
+
+                data ={
+                    "comment_id":response.comment_id,
+                    "user_id" : response.id,
+                    "content" : response.content,
+                    "date" : response.date,
+                    "full_name":comment_response.full_name,
+                    "user_profile":comment_response.user_profile, 
+                    "reply_count" : response.reply_count,
+                    "replies" : []
+                }
+
+                serializer = CommentSerializer(data)
                 if(int(user_id)!=response.user_id):
                     result = comment_notification(response.user_id, user_id, post_id)
-                    print(result)
-                return Response(f"{response.message}", status=status.HTTP_201_CREATED)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
             else:
                 return Response({'error':'Autharization Denied'}, status=status.HTTP_401_UNAUTHORIZED) 
              
         except RpcError as e:
+            if e.code() == grpc.StatusCode.UNAUTHENTICATED:
+                return Response("Authentication failed", status=status.HTTP_401_UNAUTHORIZED)
             return Response({
                 "error": f"{e.details()}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -282,16 +318,38 @@ class CommentReply(APIView):
                 comment_id = request.data.get('commentId')
                 mention_user_fullname = request.data.get('mentionUserFullName')
                 content = request.data.get('content')
+
                 response=client.reply_comment(int(user_id),
                                       int(mention_user_id),
                                       int(comment_id), 
                                       mention_user_fullname, 
                                       content)
-                return Response(f"{response.message}", status=status.HTTP_201_CREATED)  
+                
+                
+                user_response = userclient.comment_data(response.user_id)
+                
+
+                data = {
+                    "replay_id" : response.reply_id,
+                    "user_id" : response.user_id,
+                    "mention_user_id" : response.mention_user_id,
+                    "mention_user" : response.mention_user_full_name,
+                    "content" : response.content,
+                    "date" : response.date,
+                    "full_name" : user_response.full_name,
+                    "user_profile" : user_response.user_profile,
+                    "comment_id":response.comment_id
+                }
+
+                serializer = ReplaySerializer(data)
+
+                return Response(serializer.data, status=status.HTTP_201_CREATED)  
             else:
                 return Response({'error':'Autharization Denied'}, status=status.HTTP_401_UNAUTHORIZED)  
                 
         except RpcError as e:
+            if e.code() == grpc.StatusCode.UNAUTHENTICATED:
+                return Response("Authentication failed", status=status.HTTP_401_UNAUTHORIZED)
             return Response({
                 "error": f"{e.details()}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -337,9 +395,17 @@ class UpdatePost(APIView):
                 
             else:
                 return Response({'error':'Autharization Denied'}, status=status.HTTP_401_UNAUTHORIZED) 
-        except authorization:
-            return Response({'error':'Autharization Denied'}, status=status.HTTP_401_UNAUTHORIZED)
-        
+        except RpcError as e:
+            if e.code() == grpc.StatusCode.UNAUTHENTICATED:
+                return Response("Authentication failed", status=status.HTTP_401_UNAUTHORIZED)
+            return Response({
+                "error": f"{e.details()}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+        except Exception as e:
+            return Response({
+                "error": f"An unexpected error occurred: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
         
         
 
@@ -358,6 +424,8 @@ class DeleteComment(APIView):
                 return Response({'error':'Autharization Denied'}, status=status.HTTP_401_UNAUTHORIZED)  
                 
         except RpcError as e:
+            if e.code() == grpc.StatusCode.UNAUTHENTICATED:
+                return Response("Authentication failed", status=status.HTTP_401_UNAUTHORIZED)
             return Response({
                 "error": f"{e.details()}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -385,6 +453,8 @@ class DeleteReply(APIView):
                 return Response({'error':'Autharization Denied'}, status=status.HTTP_401_UNAUTHORIZED)  
                     
         except RpcError as e:
+            if e.code() == grpc.StatusCode.UNAUTHENTICATED:
+                return Response("Authentication failed", status=status.HTTP_401_UNAUTHORIZED)
             return Response({
                 "error": f"{e.details()}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -412,6 +482,8 @@ class DeletePost(APIView):
                 return Response({'error':'Autharization Denied'}, status=status.HTTP_401_UNAUTHORIZED)  
                     
         except RpcError as e:
+            if e.code() == grpc.StatusCode.UNAUTHENTICATED:
+                return Response("Authentication failed", status=status.HTTP_401_UNAUTHORIZED)
             return Response({
                 "error": f"{e.details()}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -440,6 +512,8 @@ class ReportPost(APIView):
                 return Response({'error':'Autharization Denied'}, status=status.HTTP_401_UNAUTHORIZED)  
                     
         except RpcError as e:
+            if e.code() == grpc.StatusCode.UNAUTHENTICATED:
+                return Response("Authentication failed", status=status.HTTP_401_UNAUTHORIZED)
             return Response({
                 "error": f"{e.details()}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -512,6 +586,8 @@ class GetAdminAllPost(APIView):
                     return Response("Data in not found", status=status.HTTP_404_NOT_FOUND)
                     
         except RpcError as e:
+            if e.code() == grpc.StatusCode.UNAUTHENTICATED:
+                return Response("Authentication failed", status=status.HTTP_401_UNAUTHORIZED)
             return Response({
                 "error": f"{e.details()}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -540,6 +616,8 @@ class HidePost(APIView):
                 return Response({'error':'Autharization Denied'}, status=status.HTTP_401_UNAUTHORIZED)  
                     
         except RpcError as e:
+            if e.code() == grpc.StatusCode.UNAUTHENTICATED:
+                return Response("Authentication failed", status=status.HTTP_401_UNAUTHORIZED)
             return Response({
                 "error": f"{e.details()}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

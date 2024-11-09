@@ -122,6 +122,11 @@ message CommentPostRequest{
 message CommentPostResponse{
     string message = 1;
     int32 user_id = 2;
+    int32 comment_id = 3;
+    int32 reply_count = 4;
+    string content = 5;
+    string date = 6;
+    int32 id = 7;
 }
 
 
@@ -137,8 +142,14 @@ message CommentReplyRequest{
 
 message CommentReplyResponse{
     string message = 1;
+    int32 user_id = 2;
+    int32 mention_user_id = 3;
+    int32 comment_id = 4;
+    int32 reply_id = 5;
+    string content = 6;
+    string date = 7;
+    string mention_user_full_name = 8;
 }
-
 
 
 message UniqueUserPostsRequest{

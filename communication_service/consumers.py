@@ -25,6 +25,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.accept()
         
         
+            
     @database_sync_to_async
     def get_or_create_chat_room(self):
         query_string = self.scope['query_string'].decode() 
@@ -37,6 +38,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+        query_string = self.scope['query_string'].decode() 
+        query_params = parse_qs(query_string)  
+        chat_user_id = query_params.get('chat_user', [None])[0]
+        user_id = query_params.get('user', [None])[0]
+        response = user_unview(user_id, chat_user_id)
 
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
@@ -72,17 +78,22 @@ class ChatConsumer(AsyncWebsocketConsumer):
         return {
             'id': message_dict['id'],
             'chat_room': message_dict['chat_room'],
-            'user': message_dict['user'],
+            'user': str(message_dict['user']),
             'content': message_dict['content'],
-            'timestamp': message_dict['timestamp']
+            'timestamp': message_dict['timestamp'],
+            'read':message_dict['read']
         }
         
     
     async def chat_message(self, event):
         message = event['message']
         message_obj = await self.get_message_object(message)
-        print(message_obj)
         await self.send(text_data=json.dumps(message_obj))
+        
+    async def sent_status(self, event):
+        status = event['status']
+        await self.send(text_data=json.dumps(status))
+        
 
 
 
@@ -138,6 +149,21 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         notification = event['notification']
         notification_obj = await self.get_notification_object(notification)
         await self.send(text_data=json.dumps(notification_obj))
+        
+        
+    async def send_call(self,event):
+        data ={
+            "notification" : event['notification'],
+            "full_name": event['full_name'],
+            "service" : event['service'],
+        }
+        await self.send(text_data = json.dumps(data))
+        
+    async def message_online(self, event):
+        data = {
+            "triger":event['triger']
+        }
+        await self.send(text_data = json.dumps(data))
 
 
 
@@ -150,3 +176,53 @@ class NotificationConsumer(AsyncWebsocketConsumer):
     def set_user_offline(self, user_id):
         res = user_offline(user_id)
         print(res)
+
+
+
+
+# Video call consumer
+
+
+class VideoCallConsumer(AsyncWebsocketConsumer):
+
+    async def connect(self):
+        query_string = self.scope['query_string'].decode() 
+        query_params = parse_qs(query_string)  
+        self.call_user_id = query_params.get('call_user', [None])[0]
+        self.user_id = query_params.get('user', [None])[0]
+        self.room_group_name = f'call_{self.user_id}'
+        
+        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
+        await self.accept()
+        
+        
+    async def disconnect(self, close_code):
+        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+        
+        
+    async def receive(self, text_data):
+        data = json.loads(text_data)
+
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type':'websocket_message',
+                'data':data
+            }
+        )
+        
+        
+    async def websocket_message(self, event):
+        data = event['data']
+        await self.send_call_request(self.call_user_id, data['full_name'], data['message'])
+        
+          
+    @database_sync_to_async
+    def send_call_request(self, id, full_name, message):
+        response = send_call(id, full_name, message)
+        return response
+        
+        
+        
+        
+        

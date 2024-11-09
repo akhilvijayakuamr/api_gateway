@@ -3,11 +3,12 @@ from rest_framework.response import Response
 from rest_framework import status
 from .service import APIUserClient
 from grpc import RpcError
-from .serializers import UserListSerializer, UserSearchSerializer
+from .serializers import UserListSerializer, UserDataSerializer, UserFriendsSerializer
 from api_gateway.auth import authorization
 from postservice.service import APIPostClient
 from postservice.serilizers import PostSerializers
 from communication_service.service import follow_notification
+import grpc
 
 
 
@@ -191,7 +192,8 @@ class UserLoginView(APIView):
             
             return Response({
                     "message": response.message,
-                    "token": response.jwt,
+                    "access_token": response.access_token,
+                    "refresh_token":response.refresh_token,
                     "id": response.id,
                     "email": response.email,
                     "profile_image":response.profile
@@ -233,8 +235,9 @@ class AdminLoginView(APIView):
                                          )
             
             return Response({
-                "message":response.message,
-                "token": response.jwt
+                    "message": response.message,
+                    "access_token": response.access_token,
+                    "refresh_token":response.refresh_token,
             }, status=status.HTTP_200_OK)
             
         except RpcError as e:
@@ -262,14 +265,12 @@ class UserListView(APIView):
                 response = client.get_all_users()
                 serializer = UserListSerializer(response.users, many=True)
                 return Response(serializer.data, status=status.HTTP_200_OK)
-            elif auth.user:
-                response = client.get_all_users()
-                serializer = UserListSerializer(response.users, many=True)
-                return Response(serializer.data, status=status.HTTP_200_OK)
             else:
                 return Response({'error':'Autharization Denied'}, status=status.HTTP_401_UNAUTHORIZED)
             
         except RpcError as e:
+            if e.code() == grpc.StatusCode.UNAUTHENTICATED:
+                return Response("Authentication failed", status=status.HTTP_401_UNAUTHORIZED)
             return Response({
                 "error": f"{e.details()}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -301,6 +302,8 @@ class BlockUnBlockView(APIView):
                 return Response({'error':'Autharization Denied'}, status=status.HTTP_401_UNAUTHORIZED)
             
         except RpcError as e:
+            if e.code() == grpc.StatusCode.UNAUTHENTICATED:
+                return Response("Authentication failed", status=status.HTTP_401_UNAUTHORIZED)
             return Response({
                 "error": f"{e.details()}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -323,7 +326,6 @@ class UserProfileData(APIView):
             if auth.user:
                 user_id = request.data.get('userId')
                 profile_id = request.data.get('profileId')
-                print("hais",user_id, profile_id)
                 response = client.get_profile(int(user_id), int(profile_id))
                 
                 post = post_client.unique_users_posts(profile_id)
@@ -377,10 +379,14 @@ class UserProfileData(APIView):
                 return Response(data, status=status.HTTP_200_OK)
             else:
                 return Response({'error':'Autharization Denied'}, status=status.HTTP_401_UNAUTHORIZED)  
+            
         except RpcError as e:
+            if e.code() == grpc.StatusCode.UNAUTHENTICATED:
+                return Response("Authentication failed", status=status.HTTP_401_UNAUTHORIZED)
             return Response({
                 "error": f"{e.details()}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
         except Exception as e:
             return Response({
                 "error": f"An unexpected error occurred: {str(e)}"
@@ -585,7 +591,7 @@ class SearchUser(APIView):
 
                 search_users.append(user)
 
-            serializer = UserSearchSerializer(search_users, many=True)
+            serializer = UserDataSerializer(search_users, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
             
         except RpcError as e:
@@ -601,6 +607,98 @@ class SearchUser(APIView):
 
 
 
+
+# Get all followers and followings
+
+
+class GetFriends(APIView):
+    def post(self, request):
+        user_id = request.data.get('user_id')
+        
+        if not user_id:
+            return Response("{'error':'The argument is not found'}", status=status.HTTP_404_NOT_FOUND)
+        
+        try:
+            response = client.get_friends(user_id)
+            follower_list = []
+            for follower in response.follower:
+                user ={
+                    "id":follower.id,
+                    "full_name":follower.full_name,
+                    "username":follower.user_name,
+                    "user_profile":follower.user_profile
+                }
+                
+                follower_list.append(user)
+            
+            followed_list = []
+            for followed in response.followed:
+                user ={
+                    "id":followed.id,
+                    "full_name":followed.full_name,
+                    "username":followed.user_name,
+                    "user_profile":followed.user_profile
+                }
+                
+                followed_list.append(user)
+                
+            friend_list ={
+                "follower":follower_list,
+                "followed":followed_list
+            }
+            
+            serializer = UserFriendsSerializer(friend_list)
+            
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        except RpcError as e:
+            return Response({
+                "error": f"{e.details()}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+        except Exception as e:
+            return Response({
+                "error": f"An unexpected error occurred: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            
+            
+            
+            
+# Create new access token
+
+class CreateAccessToken(APIView):
+    def get(self, request):
+        try:    
+            auth_header = request.headers.get('Authorization')
+            if not auth_header or 'Bearer ' not in auth_header:
+                return Response({'error':'Email Not Found Please Login Again'})
+            token = auth_header.split('Bearer ')[1].strip()
+            
+            response = client.check_refresh(token)
+            
+            return Response({"access_token":response.access_token,
+                             "refresh_token":response.refresh_token}, status=status.HTTP_200_OK)
+            
+        except RpcError as e:
+            if e.code() == grpc.StatusCode.UNAUTHENTICATED:
+                return Response("Authentication failed", status=status.HTTP_401_UNAUTHORIZED)
+            return Response({
+                "error": f"{e.details()}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            
+        except Exception as e:
+            return Response({
+                "error": f"An unexpected error occurred: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+    
+            
+            
+            
+                
+            
             
             
          

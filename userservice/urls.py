@@ -14,7 +14,9 @@ urlpatterns = [
     path('userprofileupdate/', views.UserUpdateView.as_view(), name="user_profile_update"), #-> user profile update path
     path('user_google/', views.GoogleLoginView.as_view(), name="google_login"), #-> google login path
     path('forgotemail/', views.UserForgotView.as_view(), name="forgotemail"), #-> User forgot email path
-    path('change_password/', views.ChangePassword.as_view(), name='change_password'), #-> User change password path
+    path('change_password/', views.ChangePassword.as_view(), name="change_password"), #-> User change password path
     path('follow/', views.UserFollow.as_view(), name="follow"), #-> Follow user path
     path('search/', views.SearchUser.as_view(), name="search"), #-> Search User
+    path('friends/', views.GetFriends.as_view(), name="friends"), #-> Get all followers and followings
+    path('refresh_token/', views.CreateAccessToken.as_view(), name="refresh_token"), #-> Create new access token
 ]

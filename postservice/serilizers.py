@@ -14,6 +14,7 @@ class ReplaySerializer(serializers.Serializer):
     date = serializers.DateTimeField()
     full_name = serializers.CharField()
     user_profile = serializers.URLField(required=False, allow_blank=True)
+    comment_id = serializers.IntegerField(required=False)
 
 
 # Comment details serializer

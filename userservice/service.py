@@ -211,6 +211,23 @@ class APIUserClient:
                                                      query = query)
         return self.user_service_stub.UserSearch(request)
 
+
+
+    # Get all friends
+    
+    
+    def get_friends(self, user_id):
+        request = user_service_pb2.GetAllFriendsRequest(user_id = int(user_id))
+        return self.user_service_stub.GetAllFriends(request)
+    
+    
+    
+    # Refresh Token 
+    
+    
+    def check_refresh(self, token):
+        request = user_service_pb2.CreateNewTokenRequest(Token=token)
+        return self.user_service_stub.CreateNewToken(request)
     
     
     

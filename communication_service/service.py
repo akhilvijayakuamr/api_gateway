@@ -47,8 +47,13 @@ def message_save(user_id, chat_user_id, message):
     
         
     client = RpcClient()
-    response = client.call(payload)  
-    return response
+    response = client.call(payload)
+    decoded_string = response.decode('utf-8')
+    data_list = ast.literal_eval(decoded_string)
+    print("responses get", data_list)
+    if(data_list):
+        message_triger(receiver_id, data_list)
+    return data_list
     
 
 
@@ -209,7 +214,6 @@ def read_all_notification(user_id):
 # Notifiation object
 
 def notification_obj(notification_content):
-    print("hkajfdsflsajfls",notification_content)
     notification_content = notification_content
     opration = "get_notification"
     
@@ -243,7 +247,6 @@ def send_notification_to_group(id, notification):
 # user_online
 
 def user_online(user_id):
-    print("id============", user_id)
     opration = "user_online"
 
     payload = {
@@ -253,14 +256,26 @@ def user_online(user_id):
 
     client = RpcClient()
     response = client.call(payload)
-    return response
+    decoded_string = response.decode('utf-8')
+    data_lists = ast.literal_eval(decoded_string)
+    all_rooms = []
+    for data_list in data_lists:
+        data_list = list(data_list)
+        id1 = data_list[0]
+        id2 = data_list[1]
+        user_ids = [int(id1), int(id2)]
+        user_ids = sorted(user_ids)
+        room_name = f"chat_{user_ids[0]}-{user_ids[1]}"
+        if room_name not in all_rooms:
+            all_rooms.append(room_name)
+        send_user_status(True, all_rooms)
+        
+    return "online"
 
 
 # user_offline
 
 def user_offline(user_id):
-    print("id============", user_id)
-
     opration = "user_offline"
 
     payload = {
@@ -270,8 +285,98 @@ def user_offline(user_id):
 
     client = RpcClient()
     response = client.call(payload)
+    decoded_string = response.decode('utf-8')
+    data_lists = ast.literal_eval(decoded_string)
+    all_rooms = []
+    for data_list in data_lists:
+        data_list = list(data_list)
+        id1 = data_list[0]
+        id2 = data_list[1]
+        user_ids = [int(id1), int(id2)]
+        user_ids = sorted(user_ids)
+        room_name = f"chat_{user_ids[0]}-{user_ids[1]}"
+        if room_name not in all_rooms:
+            all_rooms.append(room_name)
+        send_user_status(False, all_rooms)
+    
     return response
 
 
 
+# send Call request
+
+
+def send_call(id, full_name, message):
+    group_name = f"notification_{id}"
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        group_name,
+        {
+            'type': 'send_call',
+            'full_name':full_name,
+            'notification': message,
+            'service':'call'
+        }
+    )
     
+    
+# message triger
+
+def message_triger(id, triger):
+    group_name = f"notification_{id}"
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        group_name,
+        {
+            'type': 'message_online',
+            'triger':triger
+        }
+    )
+    
+    
+    
+    
+# send user status
+
+def send_user_status(status, group_names):
+    for group_name in group_names:
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            group_name,
+            {
+                'type': 'sent_status',
+                'status': status,
+            }
+        )
+
+
+
+# online user
+
+
+def online_user(user_id):
+    opration = "online_user" 
+    payload = {
+        'user_id':user_id,
+        'opration':opration
+    }
+    client = RpcClient()
+    response = client.call(payload)
+    return response
+
+
+# user unview
+
+
+def user_unview(user_id, chat_user_id):
+    opration = "user_unview"
+    sender_id = user_id
+    receiver_id = chat_user_id
+        
+    payload = {
+                'sender_id':sender_id,
+                'receiver_id':receiver_id,
+                'opration':opration}
+        
+    client = RpcClient()
+    response = client.call(payload)  

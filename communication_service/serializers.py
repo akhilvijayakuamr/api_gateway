@@ -9,7 +9,7 @@ class ChatUserSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     full_name = serializers.CharField(max_length = 50)
     user_profile = serializers.URLField(required=False, allow_blank=True)
-    online = serializers.BooleanField()
+    online = serializers.IntegerField()
 
 
 
