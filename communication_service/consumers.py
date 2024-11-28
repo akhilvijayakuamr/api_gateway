@@ -127,7 +127,6 @@ class NotificationConsumer(AsyncWebsocketConsumer):
     def get_notification_object(self, notification_content):
         notification = notification_obj(notification_content)
         decoded_notification = notification.decode('utf-8')
-
         notification_dict = ast.literal_eval(decoded_notification)
         profile_response =  userclient.post_unique_data(notification_dict['another_user'])
 

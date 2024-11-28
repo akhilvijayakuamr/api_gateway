@@ -19,4 +19,5 @@ urlpatterns = [
     path('search/', views.SearchUser.as_view(), name="search"), #-> Search User
     path('friends/', views.GetFriends.as_view(), name="friends"), #-> Get all followers and followings
     path('refresh_token/', views.CreateAccessToken.as_view(), name="refresh_token"), #-> Create new access token
+    path('dashboard/', views.DashboardUserData.as_view(), name="dashboard"), #-> Get all dashboard datas
 ]

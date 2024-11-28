@@ -20,14 +20,14 @@ class ChatList(APIView):
     def post(self, request):
         try:
             auth = authorization(request)
-            print(auth)
             if auth.user:
                 sender_id = request.data.get('userId')
                 receiver_id = request.data.get('chatUserId')
-                
                 response = chat_list(sender_id, receiver_id)
-                
-                decoded_string = response.decode('utf-8')
+                if isinstance(response, bytes):
+                    decoded_string = response.decode('utf-8')
+                elif isinstance(response, list): 
+                    decoded_string = response
 
                 if decoded_string:
                     decoded_string = decoded_string.replace("'", '"') 
@@ -62,27 +62,23 @@ class ChatUserList(APIView):
      def post(self, request):
         try:
             auth = authorization(request)
-            print(auth)
             if auth.user:
                 user_id = request.data.get('userId')
                 
                 response = all_chat_user(user_id)
-                print("responseeee", response)
-                
-                decoded_string = response.decode('utf-8')
-                
-                decoded_string = decoded_string.replace("'", '"')
-                
-                try:
-                    parsed_data = json.loads(decoded_string) 
-                except json.JSONDecodeError as e:
-                    print(f"Error parsing JSON: {e}")
-                    parsed_data = []
-
+                if isinstance(response, bytes):
+                    decoded_string = response.decode('utf-8')
+                    decoded_string = decoded_string.replace("'", '"').replace("False", "false").replace("True", "true")
+                elif isinstance(response, list):
+                    decoded_string = response
+                if decoded_string:
+                    try:
+                        parsed_data = json.loads(decoded_string) 
+                    except json.JSONDecodeError as e:
+                        print(f"Error parsing JSON: {e}")
+                        parsed_data = []
                 chat_users = []
-                print("parsedata", parsed_data)
                 for user in parsed_data:
-                    print("userfasfas s", user)
                     user_id = user[0]
                     profile_response =  userclient.post_unique_data(user_id)
 
@@ -90,10 +86,10 @@ class ChatUserList(APIView):
                         'id':user_id,
                         'user_profile':profile_response.profile_image,
                         'full_name':profile_response.full_name,
-                        'online':int(user[1])
+                        'message':int(user[1]),
+                        'online':user[2]
                                      
                     }
-                    print(users)
 
                     chat_users.append(users)
 
@@ -124,24 +120,28 @@ class ChatUserList(APIView):
 class GetNotifications(APIView):
      def post(self, request):
         try:
-            print("headers===========================", request.headers)
             auth = authorization(request)
-            print(auth)
             if auth.user:
                 user_id = request.data.get('userId')
                 response =  get_all_notification(user_id) 
-                decoded_string = response.decode('utf-8')
-                decoded_string = decoded_string.replace("None", "null") 
-                decoded_string = decoded_string.replace("'", '"') 
-                decoded_string = decoded_string.replace("False", "false") 
-                decoded_string = decoded_string.replace("True", "true") 
-
-                try:
-                    parsed_data = json.loads(decoded_string) 
-                except json.JSONDecodeError as e:
-                    print(f"Error parsing JSON: {e}")
+                if isinstance(response, bytes):
+                    decoded_string = response.decode('utf-8')
+                    decoded_string = decoded_string.replace("None", "null") 
+                    decoded_string = decoded_string.replace("'", '"') 
+                    decoded_string = decoded_string.replace("False", "false") 
+                    decoded_string = decoded_string.replace("True", "true") 
+                elif isinstance(response, list): 
+                    decoded_string = response
+                else:
+                    decoded_string = []
+                if decoded_string:
+                    try:
+                        parsed_data = json.loads(decoded_string) 
+                    except json.JSONDecodeError as e:
+                        print(f"Error parsing JSON: {e}")
+                        parsed_data = []
+                else:
                     parsed_data = []
-
                 notifications = []
                 for notification in parsed_data:
                     user_id = notification.get('another_user') 
@@ -157,16 +157,9 @@ class GetNotifications(APIView):
                         "read":notification.get('read'),
                         "user_profile":profile_response.profile_image,
                         "full_name":profile_response.full_name,
-
                     }
-
                     notifications.append(data)
-
-                
-
-            
-                return Response(notifications, status=status.HTTP_200_OK)
-                              
+                return Response(notifications, status=status.HTTP_200_OK) 
             else:
                 return Response({'error':'Autharization Denied'}, status=status.HTTP_401_UNAUTHORIZED)
          
@@ -221,19 +214,14 @@ class OnlineUser(APIView):
      def post(self, request):
         try:
             auth = authorization(request)
-            print(auth)
             if auth.user:
                 user_id = request.data.get('user_id')
                 response = online_user(user_id)
-                print("buffer_data", response)
                 decoded_response = response.decode('utf-8')
                 is_user_online = decoded_response == 'True'
-                print("user_online", is_user_online)
                 return Response({"online":is_user_online}, status=status.HTTP_200_OK)
             else:
                 return Response({'error':'Autharization Denied'}, status=status.HTTP_401_UNAUTHORIZED) 
-            
-    
         except RpcError as e:
             if e.code() == grpc.StatusCode.UNAUTHENTICATED:
                 return Response("Authentication failed", status=status.HTTP_401_UNAUTHORIZED)

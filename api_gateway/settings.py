@@ -36,7 +36,7 @@ SECRET_KEY = config('SECRET_KEY')
 
 DEBUG = config('DEBUG', cast=bool, default=True)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [config('ALLOWED_HOSTS', default='localhost')]
 
 
 
@@ -121,6 +121,7 @@ CORS_ALLOW_HEADERS = [
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
+    'https://assuretech.cyou'
 ]
 
 
@@ -158,15 +159,10 @@ ASGI_APPLICATION = 'api_gateway.asgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DB_NAME'),  # database name
-        'USER': config('DB_USER'),       # PostgreSQL user
-        'PASSWORD': config('DB_PASSWORD'),  # PostgreSQL password
-        'HOST': config('DB_HOST'),    # Database host (usually localhost)
-        'PORT': config('DB_PORT'),         # PostgreSQL port
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-
 
 
 
@@ -196,6 +192,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
+
 TIME_ZONE = 'UTC'
 
 USE_I18N = True
@@ -209,6 +206,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles') 
 
 
 
@@ -237,6 +235,9 @@ RABBITMQ_URL = config('RABBITMQ_URL')
 
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer",  # Use InMemoryChannelLayer for development
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("redis", 6379)],
+        },
     },
 }

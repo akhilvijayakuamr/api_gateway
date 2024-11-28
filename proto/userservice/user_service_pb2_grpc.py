@@ -134,6 +134,11 @@ class UserServiceStub(object):
                 request_serializer=user__service__pb2.CreateNewTokenRequest.SerializeToString,
                 response_deserializer=user__service__pb2.CreateNewTokenResponse.FromString,
                 _registered_method=True)
+        self.DashboardUserDetails = channel.unary_unary(
+                '/user_service.UserService/DashboardUserDetails',
+                request_serializer=user__service__pb2.DashboardUserDetailsRequest.SerializeToString,
+                response_deserializer=user__service__pb2.DashboardUserDetailsResponse.FromString,
+                _registered_method=True)
 
 
 class UserServiceServicer(object):
@@ -259,6 +264,12 @@ class UserServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def DashboardUserDetails(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_UserServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -361,6 +372,11 @@ def add_UserServiceServicer_to_server(servicer, server):
                     servicer.CreateNewToken,
                     request_deserializer=user__service__pb2.CreateNewTokenRequest.FromString,
                     response_serializer=user__service__pb2.CreateNewTokenResponse.SerializeToString,
+            ),
+            'DashboardUserDetails': grpc.unary_unary_rpc_method_handler(
+                    servicer.DashboardUserDetails,
+                    request_deserializer=user__service__pb2.DashboardUserDetailsRequest.FromString,
+                    response_serializer=user__service__pb2.DashboardUserDetailsResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -903,6 +919,33 @@ class UserService(object):
             '/user_service.UserService/CreateNewToken',
             user__service__pb2.CreateNewTokenRequest.SerializeToString,
             user__service__pb2.CreateNewTokenResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def DashboardUserDetails(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/user_service.UserService/DashboardUserDetails',
+            user__service__pb2.DashboardUserDetailsRequest.SerializeToString,
+            user__service__pb2.DashboardUserDetailsResponse.FromString,
             options,
             channel_credentials,
             insecure,

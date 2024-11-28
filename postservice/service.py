@@ -1,10 +1,10 @@
 import grpc
 from proto.postservice import post_service_pb2, post_service_pb2_grpc
-
+from decouple import config
 
 class APIPostClient:
     def __init__(self):
-        self.post_service_channel = grpc.insecure_channel('localhost:50052')
+        self.post_service_channel = grpc.insecure_channel(config('POST_SERVICE_URL'))
         self.post_service_stub = post_service_pb2_grpc.PostServiceStub(self.post_service_channel)
         
         
@@ -69,7 +69,6 @@ class APIPostClient:
     
     # Unique User Posts
     
-    
     def unique_users_posts(self, user_id):
         print("user_id",user_id)
         request = post_service_pb2.UniqueUserPostsRequest(user_id=int(user_id))
@@ -77,7 +76,6 @@ class APIPostClient:
     
     
     # Update Post
-    
     
     def update_post(self, id, user_id, title, content, link, post_image_bytes):
         request = post_service_pb2.PostUpdateRequest(
@@ -94,7 +92,6 @@ class APIPostClient:
     
     # Comment Delete
     
-    
     def comment_delete(self, comment_id):
         request = post_service_pb2.CommentDeleteRequest(comment_id = int(comment_id))
         return self.post_service_stub.CommentDelete(request)
@@ -109,7 +106,6 @@ class APIPostClient:
     
     
     # Post Delete
-    
     
     def delete_post(self, post_id):
         request = post_service_pb2.PostDeleteRequest(post_id = int(post_id))
@@ -137,10 +133,17 @@ class APIPostClient:
     
     # Post Hide
     
-    
     def hide_post(self, post_id):
         request = post_service_pb2.PostHideRequest(post_id = int(post_id))
         return self.post_service_stub.PostHide(request)
+    
+    
+    
+    # Dashboard post all details
+    
+    def dashboard_post_details(self):
+        request = post_service_pb2.DashboardPostDetailsRequest()
+        return self.post_service_stub.DashboardPostDetails(request)
     
     
     

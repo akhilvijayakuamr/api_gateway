@@ -1,11 +1,12 @@
 import grpc 
 from proto.userservice import user_service_pb2, user_service_pb2_grpc
+from decouple import config
 
 
 
 class APIUserClient:
     def __init__(self):
-        self.user_service_channel = grpc.insecure_channel('localhost:50051')
+        self.user_service_channel = grpc.insecure_channel(config('USER_SERVICE_URL'))
         self.user_service_stub = user_service_pb2_grpc.UserServiceStub(self.user_service_channel)
         
         
@@ -135,7 +136,6 @@ class APIUserClient:
         request = user_service_pb2.GoogleUserRequest(email=email,
                                                     full_name=fullname,
                                                    )
-        
         return self.user_service_stub.GoogleUser(request)
     
     
@@ -215,7 +215,6 @@ class APIUserClient:
 
     # Get all friends
     
-    
     def get_friends(self, user_id):
         request = user_service_pb2.GetAllFriendsRequest(user_id = int(user_id))
         return self.user_service_stub.GetAllFriends(request)
@@ -224,10 +223,17 @@ class APIUserClient:
     
     # Refresh Token 
     
-    
     def check_refresh(self, token):
         request = user_service_pb2.CreateNewTokenRequest(Token=token)
         return self.user_service_stub.CreateNewToken(request)
+    
+    
+    
+    # Get all dashboard user details
+    
+    def dashboard_user_details(self):
+        request = user_service_pb2.DashboardUserDetailsRequest()
+        return self.user_service_stub.DashboardUserDetails(request)
     
     
     

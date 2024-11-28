@@ -50,7 +50,6 @@ def message_save(user_id, chat_user_id, message):
     response = client.call(payload)
     decoded_string = response.decode('utf-8')
     data_list = ast.literal_eval(decoded_string)
-    print("responses get", data_list)
     if(data_list):
         message_triger(receiver_id, data_list)
     return data_list
@@ -256,8 +255,11 @@ def user_online(user_id):
 
     client = RpcClient()
     response = client.call(payload)
-    decoded_string = response.decode('utf-8')
-    data_lists = ast.literal_eval(decoded_string)
+    if isinstance(response, bytes):
+        decoded_string = response.decode('utf-8')
+        data_lists = ast.literal_eval(decoded_string)
+    elif isinstance(response, list): 
+        data_lists = response
     all_rooms = []
     for data_list in data_lists:
         data_list = list(data_list)
@@ -268,7 +270,7 @@ def user_online(user_id):
         room_name = f"chat_{user_ids[0]}-{user_ids[1]}"
         if room_name not in all_rooms:
             all_rooms.append(room_name)
-        send_user_status(True, all_rooms)
+    send_user_status(True, all_rooms, user_id)
         
     return "online"
 
@@ -285,8 +287,11 @@ def user_offline(user_id):
 
     client = RpcClient()
     response = client.call(payload)
-    decoded_string = response.decode('utf-8')
-    data_lists = ast.literal_eval(decoded_string)
+    if isinstance(response, bytes):  
+        decoded_string = response.decode('utf-8')
+        data_lists = ast.literal_eval(decoded_string)
+    elif isinstance(response, list):
+        data_lists = response
     all_rooms = []
     for data_list in data_lists:
         data_list = list(data_list)
@@ -297,8 +302,7 @@ def user_offline(user_id):
         room_name = f"chat_{user_ids[0]}-{user_ids[1]}"
         if room_name not in all_rooms:
             all_rooms.append(room_name)
-        send_user_status(False, all_rooms)
-    
+        send_user_status(False, all_rooms, user_id)
     return response
 
 
@@ -334,25 +338,22 @@ def message_triger(id, triger):
     )
     
     
-    
-    
 # send user status
 
-def send_user_status(status, group_names):
+def send_user_status(status, group_names, user_id):
     for group_name in group_names:
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
             group_name,
             {
                 'type': 'sent_status',
-                'status': status,
+                'status': {"status":status,
+                           "user_id":user_id},
             }
         )
 
 
-
 # online user
-
 
 def online_user(user_id):
     opration = "online_user" 
@@ -366,7 +367,6 @@ def online_user(user_id):
 
 
 # user unview
-
 
 def user_unview(user_id, chat_user_id):
     opration = "user_unview"

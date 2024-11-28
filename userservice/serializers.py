@@ -34,6 +34,18 @@ class UserFriendsSerializer(serializers.Serializer):
     followed = UserDataSerializer(many=True, required=False)
     
     
+# Dashboard serializer
+
+class DashboardSerializer(serializers.Serializer):
+    all_users = serializers.IntegerField()
+    block_users = serializers.IntegerField()
+    all_posts = serializers.IntegerField()
+    hide_posts = serializers.IntegerField()
+    deleted_posts = serializers.IntegerField()
+    reported_post = serializers.IntegerField()
+    all_reports = serializers.IntegerField()
+    
+    
 
 
 

@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .service import APIUserClient
 from grpc import RpcError
-from .serializers import UserListSerializer, UserDataSerializer, UserFriendsSerializer
+from .serializers import *
 from api_gateway.auth import authorization
 from postservice.service import APIPostClient
 from postservice.serilizers import PostSerializers
@@ -459,8 +459,9 @@ class GoogleLoginView(APIView):
                                         )
             
             return Response({
+                    "access_token":response.access_token,
+                    "refresh_token":response.refresh_token,
                     "message": response.message,
-                    "token": response.jwt,
                     "id": response.id,
                     "email": response.email
                 }, status=status.HTTP_200_OK)
@@ -539,7 +540,6 @@ class ChangePassword(APIView):
             
 # User Follow
 
-
 class UserFollow(APIView):
     def post(self, request):
         user_id = request.data.get('userId')
@@ -552,7 +552,6 @@ class UserFollow(APIView):
             response = client.follow_user(user_id, follow_user_id)
             if response.message == "You are now following this user":
                 result = follow_notification(user_id, follow_user_id)
-                print(result)
             return Response({"message": {response.message}
                              }, status=status.HTTP_201_CREATED)
             
@@ -609,7 +608,6 @@ class SearchUser(APIView):
 
 
 # Get all followers and followings
-
 
 class GetFriends(APIView):
     def post(self, request):
@@ -696,8 +694,46 @@ class CreateAccessToken(APIView):
     
             
             
-            
+# Get all dashboard user details
+
+class DashboardUserData(APIView):
+    def get(self, request):
+    
+        try:
+            auth = authorization(request)
+            if auth.admin:
+                user_response = client.dashboard_user_details()
+                post_response = post_client.dashboard_post_details()
+                data = {
+                    "all_users" : user_response.all_users,
+                    "block_users" : user_response.block_users,
+                    "all_posts" : post_response.all_posts,
+                    "hide_posts" : post_response.hide_posts,
+                    "deleted_posts" : post_response.deleted_posts,
+                    "reported_post" : post_response.reported_posts,
+                    "all_reports" :post_response.all_reports
+                }
                 
+                serializer = DashboardSerializer(data)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+                
+            else:
+                return Response({'error':'Autharization Denied'}, status=status.HTTP_401_UNAUTHORIZED) 
+            
+        except RpcError as e:
+            if e.code() == grpc.StatusCode.UNAUTHENTICATED:
+                return Response("Authentication failed", status=status.HTTP_401_UNAUTHORIZED)
+            return Response({
+                "error": f"{e.details()}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+        except Exception as e:
+            return Response({
+                "error": f"An unexpected error occurred: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            
+               
             
             
             

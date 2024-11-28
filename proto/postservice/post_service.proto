@@ -17,6 +17,7 @@ service PostService {
     rpc PostReport(PostReportRequest) returns (PostReportResponse);
     rpc GetAllAdminPost(GetAllAdminPostRequest) returns (GetAllAdminPostResponse);
     rpc PostHide(PostHideRequest) returns (PostHideResponse);
+    rpc DashboardPostDetails(DashboardPostDetailsRequest) returns (DashboardPostDetailsResponse);
    
 }
 
@@ -267,6 +268,18 @@ message PostHideRequest{
 
 message PostHideResponse{
     string message = 1;
+}
+
+
+message DashboardPostDetailsRequest{}
+
+
+message DashboardPostDetailsResponse{
+    int32 all_posts = 1;
+    int32 hide_posts = 2;
+    int32 deleted_posts = 3;
+    int32 reported_posts = 4;
+    int32 all_reports = 5;
 }
 
 

@@ -24,6 +24,8 @@ service UserService {
     rpc UserSearch(UserSearchRequest) returns (UserSearchResponse);
     rpc GetAllFriends(GetAllFriendsRequest) returns (GetAllFriendsResponse);
     rpc CreateNewToken(CreateNewTokenRequest) returns (CreateNewTokenResponse);
+    rpc DashboardUserDetails(DashboardUserDetailsRequest) returns (DashboardUserDetailsResponse);
+   
   
   
 }
@@ -175,8 +177,9 @@ message GoogleUserRequest{
 message GoogleUserResponse{
     string id = 1;
     string email = 2;
-    string jwt = 3;
-    string message = 4;
+    string access_token = 3;
+    string refresh_token = 4;
+    string message = 5;
 }
 
 
@@ -294,5 +297,18 @@ message CreateNewTokenResponse{
     string access_token = 1;
     string refresh_token = 2;
 }
+
+
+message DashboardUserDetailsRequest{}
+
+
+message DashboardUserDetailsResponse{
+    int32 all_users = 1;
+    int32 block_users = 2;
+}
+
+
+
+
 
 
