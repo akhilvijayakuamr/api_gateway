@@ -165,6 +165,7 @@ class APIUserClient:
     # Take user profile photo
 
     def profile_photo(self, user_id):
+        print("what is the id", user_id)
         request = user_service_pb2.PostProfileRequest(user_id=user_id)
         return self.user_service_stub.PostProfile(request)
     

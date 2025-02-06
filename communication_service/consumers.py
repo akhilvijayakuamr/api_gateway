@@ -155,6 +155,8 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             "notification" : event['notification'],
             "full_name": event['full_name'],
             "service" : event['service'],
+            "my_id": event['my_id'],
+            "caller_id":event['caller_id'],
         }
         await self.send(text_data = json.dumps(data))
         
@@ -182,45 +184,101 @@ class NotificationConsumer(AsyncWebsocketConsumer):
 # Video call consumer
 
 
-class VideoCallConsumer(AsyncWebsocketConsumer):
+# class VideoCallConsumer(AsyncWebsocketConsumer):
+
+#     async def connect(self):
+#         query_string = self.scope['query_string'].decode() 
+#         query_params = parse_qs(query_string)  
+#         self.call_user_id = query_params.get('call_user', [None])[0]
+#         self.user_id = query_params.get('user', [None])[0]
+#         self.room_group_name = f'call_{self.user_id}'
+        
+#         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
+#         await self.accept()
+        
+        
+#     async def disconnect(self, close_code):
+#         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+        
+        
+#     async def receive(self, text_data):
+#         data = json.loads(text_data)
+
+#         await self.channel_layer.group_send(
+#             self.room_group_name,
+#             {
+#                 'type':'websocket_message',
+#                 'data':data
+#             }
+#         )
+        
+        
+#     async def websocket_message(self, event):
+#         data = event['data']
+#         await self.send_call_request(self.call_user_id, data['full_name'], data['message'])
+        
+          
+#     @database_sync_to_async
+#     def send_call_request(self, id, full_name, message):
+#         response = send_call(id, full_name, message)
+#         return response
+        
+        
+        
+# webRTC Video call
+
+class WebRTCCallConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
         query_string = self.scope['query_string'].decode() 
         query_params = parse_qs(query_string)  
         self.call_user_id = query_params.get('call_user', [None])[0]
         self.user_id = query_params.get('user', [None])[0]
-        self.room_group_name = f'call_{self.user_id}'
-        
+        user_ids = [int(self.call_user_id), int(self.user_id)]
+        user_ids = sorted(user_ids)
+        self.room_group_name = f"call_{user_ids[0]}-{user_ids[1]}"
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
-        
-        
+
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
-        
-        
-    async def receive(self, text_data):
-        data = json.loads(text_data)
 
-        await self.channel_layer.group_send(
+    async def receive(self, text_data):
+        message = json.loads(text_data)
+        
+        if message['call'] == "Yes":
+            await self.channel_layer.group_send(
             self.room_group_name,
             {
                 'type':'websocket_message',
-                'data':data
+                'message':'calling you',
+                'data':message
             }
-        )
+            )
+            
+        else:
+            # Broadcast message to the room
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {"type": "signal_message", "message": message},
+            )
+
+    async def signal_message(self, event):
+        message = event["message"]
+        await self.send(text_data=json.dumps(message))
+        
         
         
     async def websocket_message(self, event):
         data = event['data']
-        await self.send_call_request(self.call_user_id, data['full_name'], data['message'])
+        message = event['message']
+        await self.send_call_request(self.call_user_id, data['full_name'], message, data['caller_id'])
         
           
     @database_sync_to_async
-    def send_call_request(self, id, full_name, message):
-        response = send_call(id, full_name, message)
+    def send_call_request(self, id, full_name, message, caller_id):
+        response = send_call(id, full_name, message, caller_id)
         return response
-        
         
         
         

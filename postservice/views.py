@@ -9,6 +9,7 @@ from . serilizers import PostSerializers, CommentSerializer, ReplaySerializer
 from datetime import datetime
 from communication_service.service import like_notification, comment_notification
 import grpc
+from django.conf import settings
 
 
 # Create your views here.

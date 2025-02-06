@@ -8,9 +8,18 @@ from userservice.service import APIUserClient
 from .serializers import ChatUserSerializer
 from grpc import RpcError
 import grpc
+import stripe
+from django.shortcuts import redirect
+from django.conf import settings
+from stripe.error import StripeError
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
 
 
 userclient = APIUserClient()
+stripe.api_key = settings.STRIP_SECRET_KEY
+FRONT_END_URL = settings.FRONT_END_URL
+
 
 
 
@@ -233,6 +242,117 @@ class OnlineUser(APIView):
             return Response({
                 "error": f"An unexpected error occurred: {str(e)}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
+            
+            
+            
+        
+        
+# Strip Checkout view
+
+
+class StripeCheckoutView(APIView):
+
+    def post(self, request):
+        try:
+            checkout_session = stripe.checkout.Session.create(
+            line_items=[
+                {
+                    'price': 'price_1QQRdnJqqRzLhxPC2DWV0po8',
+                    'quantity': 1,
+                },
+            ],
+            payment_method_types=['card'],
+            mode='subscription',
+            success_url = "https://assuretech.cyou/payment_success",
+            cancel_url = "https://assuretech.cyou/payment_failed"
+        )
+            return redirect(checkout_session.url)
+
+        except StripeError as e:
+            print("url of front end =",FRONT_END_URL)
+            print(f"Stripe error occurred: {e.error.message}")  # More specific error message from Stripe
+            return Response({"error": e.user_message or "Stripe error occurred"}, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            print("it is worked")
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        
+
+
+# Strip webhook view
+
+class StripeWebhookView(APIView):
+    csrf_exempt = True
+
+    def post(self, request, *args, **kwargs):
+        payload = request.body
+        sig_header = request.META['HTTP_STRIPE_SIGNATURE']
+        endpoint_secret = settings.WEB_HOOKS_SECRET_KEY  
+
+        try:
+            event = stripe.Webhook.construct_event(
+                payload, sig_header, endpoint_secret
+            )
+        except ValueError as e:
+            return Response({"error": "Invalid payload"}, status=400)
+        except stripe.error.SignatureVerificationError as e:
+            return Response({"error": "Invalid signature"}, status=400)
+
+        
+        if event['type'] == 'checkout.session.completed':
+            session = event['data']['object']
+            self.handle_successful_payment(session)
+        return Response({"status": "success"}, status=200)
+    
+    
+    # Payment success operation
+
+    def handle_successful_payment(self, session):
+        customer_id = session.get('customer', '')
+        email = session.get('customer_details', {}).get('email', '')
+        amount_total = session.get('amount_total', 0)
+        if isinstance(amount_total, tuple):
+            amount_total = int(amount_total[0])  
+        elif isinstance(amount_total, str):
+            amount_total = int(amount_total)  
+        amount = amount_total / 100 
+        currency = session.get('currency', 'INR')
+        payment_status = session.get('payment_status', 'unpaid')
+        response = premium(customer_id, email, amount, currency, payment_status)
+        return response
+
+        
+        
+# Check premium
+
+class CheckPremium(APIView):
+        def post(self, request):
+            try:
+                auth = authorization(request)
+                if auth.user:
+                    email = request.data.get('email')
+                    response = premium_user(email)
+                    decoded_response = response.decode('utf-8')
+                    is_user_online = decoded_response == 'True'
+                    return Response({"premium":is_user_online}, status=status.HTTP_200_OK)
+                else:
+                    return Response({'error':'Autharization Denied'}, status=status.HTTP_401_UNAUTHORIZED) 
+            except RpcError as e:
+                if e.code() == grpc.StatusCode.UNAUTHENTICATED:
+                    return Response("Authentication failed", status=status.HTTP_401_UNAUTHORIZED)
+                return Response({
+                    "error": f"{e.details()}"
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            except Exception as e:
+                return Response({
+                    "error": f"An unexpected error occurred: {str(e)}"
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
+            
+        
+
+
         
         
           

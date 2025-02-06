@@ -1,5 +1,7 @@
-from rest_framework.response import Response
 from userservice.service import APIUserClient
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.decorators import api_view
 
 
 client = APIUserClient()
@@ -17,3 +19,11 @@ def authorization(request):
     token = auth_header.split('Bearer ')[1].strip()
     return client.check_auth(token)
     
+    
+    
+    
+# Checking funcation
+
+@api_view(['GET'])
+def health_check(request):
+    return Response({"status": "Success"}, status=status.HTTP_200_OK)

@@ -18,12 +18,12 @@ import ast
 def crete_room(user_id, chat_user_id):
     sender_id = user_id
     receiver_id = chat_user_id
-    opration = "create_room"
+    operation = "create_room"
         
     payload = {
                 'sender_id':sender_id,
                 'receiver_id':receiver_id,
-                'opration':opration}
+                'operation':operation}
         
     client = RpcClient()
     response = client.call(payload)  
@@ -37,13 +37,13 @@ def message_save(user_id, chat_user_id, message):
     sender_id = user_id
     receiver_id = chat_user_id
     message_content = message
-    opration = "save_message"
+    operation = "save_message"
     
     payload = {
                 'sender_id':sender_id,
                 'receiver_id':receiver_id,
                 'message_content':message_content,
-                'opration':opration}
+                'operation':operation}
     
         
     client = RpcClient()
@@ -62,11 +62,11 @@ def message_save(user_id, chat_user_id, message):
 
 def message_obj(message_content):
     message_content = message_content
-    opration = "get_message"
+    operation = "get_message"
     
     payload = {
         'message_content':message_content,
-        'opration':opration
+        'operation':operation
     }
     
     client = RpcClient()
@@ -80,12 +80,12 @@ def message_obj(message_content):
 
 def chat_list(sender_id, receiver_id):
 
-    opration = "get_all_chat"
+    operation = "get_all_chat"
 
     payload = {
             'sender_id':sender_id,
             'receiver_id':receiver_id,
-            'opration':opration
+            'operation':operation
                 }
                 
     client = RpcClient()
@@ -98,11 +98,11 @@ def chat_list(sender_id, receiver_id):
 
 def all_chat_user(user_id):
 
-    opration = "all_chat_user"
+    operation = "all_chat_user"
 
     payload = {
         'user_id':user_id,
-        'opration':opration
+        'operation':operation
     }
 
     client = RpcClient()
@@ -114,12 +114,12 @@ def all_chat_user(user_id):
 # Notification for followers
 
 def follow_notification(user_id, another_user_id):
-    opration = "follow_notification"
+    operation = "follow_notification"
 
     payload = {
         'user_id':user_id,
         'another_user_id':another_user_id,
-        'opration':opration
+        'operation':operation
     }
     client = RpcClient()
     response = client.call(payload)
@@ -141,7 +141,7 @@ def like_notification(user_id, another_user_id, post_id):
         'user_id':user_id,
         'another_user_id':another_user_id,
         'post_id':post_id,
-        'opration':opration
+        'operation':opration
     }
     client = RpcClient()
     response = client.call(payload)
@@ -156,12 +156,12 @@ def like_notification(user_id, another_user_id, post_id):
 # Notification for comment
 
 def comment_notification(user_id, another_user_id, post_id):
-    opration = "comment_notification"
+    operation = "comment_notification"
     payload = {
         'user_id':user_id,
         'another_user_id':another_user_id,
         'post_id':post_id,
-        'opration':opration
+        'operation':operation
     }
     client = RpcClient()
     response = client.call(payload)
@@ -178,11 +178,11 @@ def comment_notification(user_id, another_user_id, post_id):
 
 def get_all_notification(user_id):
 
-    opration = "all_notification"
+    operation = "all_notification"
 
     payload = {
         'user_id':user_id,
-        'opration':opration
+        'operation':operation
     }
 
     client = RpcClient()
@@ -196,11 +196,11 @@ def get_all_notification(user_id):
 
 def read_all_notification(user_id):
 
-    opration = "read_notification"
+    operation = "read_notification"
 
     payload = {
         'user_id':user_id,
-        'opration':opration
+        'operation':operation
     }
 
     client = RpcClient()
@@ -214,11 +214,11 @@ def read_all_notification(user_id):
 
 def notification_obj(notification_content):
     notification_content = notification_content
-    opration = "get_notification"
+    operation = "get_notification"
     
     payload = {
         'notification_content':notification_content,
-        'opration':opration
+        'operation':operation
     }
     
     client = RpcClient()
@@ -246,11 +246,11 @@ def send_notification_to_group(id, notification):
 # user_online
 
 def user_online(user_id):
-    opration = "user_online"
+    operation = "user_online"
 
     payload = {
         'user_id':user_id,
-        'opration':opration
+        'operation':operation
     }
 
     client = RpcClient()
@@ -278,11 +278,11 @@ def user_online(user_id):
 # user_offline
 
 def user_offline(user_id):
-    opration = "user_offline"
+    operation = "user_offline"
 
     payload = {
         'user_id':user_id,
-        'opration':opration
+        'operation':operation
     }
 
     client = RpcClient()
@@ -310,7 +310,7 @@ def user_offline(user_id):
 # send Call request
 
 
-def send_call(id, full_name, message):
+def send_call(id, full_name, message, caller_id):
     group_name = f"notification_{id}"
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
@@ -319,6 +319,8 @@ def send_call(id, full_name, message):
             'type': 'send_call',
             'full_name':full_name,
             'notification': message,
+            'my_id':id,
+            'caller_id':caller_id,
             'service':'call'
         }
     )
@@ -356,10 +358,10 @@ def send_user_status(status, group_names, user_id):
 # online user
 
 def online_user(user_id):
-    opration = "online_user" 
+    operation = "online_user" 
     payload = {
         'user_id':user_id,
-        'opration':opration
+        'operation':operation
     }
     client = RpcClient()
     response = client.call(payload)
@@ -369,14 +371,45 @@ def online_user(user_id):
 # user unview
 
 def user_unview(user_id, chat_user_id):
-    opration = "user_unview"
+    operation = "user_unview"
     sender_id = user_id
     receiver_id = chat_user_id
         
     payload = {
                 'sender_id':sender_id,
                 'receiver_id':receiver_id,
-                'opration':opration}
+                'operation':operation}
         
     client = RpcClient()
     response = client.call(payload)  
+    
+    
+# Premium customer
+
+def premium(customer_id, email, amount, currency, status):
+    operation = "premium"
+    
+    payload = {
+        'customer_id':customer_id, 
+        'email':email,
+        'amount':amount, 
+        'currency':currency, 
+        'status':status,
+        'operation':operation
+    }
+    
+    client = RpcClient()
+    return client.call(payload)  
+
+
+# Check premium
+
+def premium_user(email):
+    operation = "premium_user" 
+    payload = {
+        'email':email,
+        'operation':operation
+    }
+    client = RpcClient()
+    response = client.call(payload)
+    return response

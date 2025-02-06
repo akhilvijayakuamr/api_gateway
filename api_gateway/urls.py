@@ -18,12 +18,14 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from .auth import health_check
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('users/', include('userservice.urls')),  #-> Connect User service urls
     path('post/', include('postservice.urls')),   #-> Connect Post service urls
     path('communication/', include('communication_service.urls')), #-> Connect Communication service urls
+    path('check/', health_check, name="health_check"), #-> Health check function
     
 ]
 

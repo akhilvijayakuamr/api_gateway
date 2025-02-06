@@ -73,6 +73,8 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'api_gateway.urls'
 
+FRONT_END_URL = config('FRONT_END_URL')
+
 
 
 # CORS
@@ -121,7 +123,7 @@ CORS_ALLOW_HEADERS = [
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
-    'https://assuretech.cyou'
+    "https://assuretech.cyou"
 ]
 
 
@@ -233,11 +235,31 @@ RABBITMQ_URL = config('RABBITMQ_URL')
 
 # Channel layer
 
+# CHANNEL_LAYERS = {
+#     "default": {
+#         "BACKEND": "channels_redis.core.RedisChannelLayer",
+#         "CONFIG": {
+#             "hosts": [("redis", 6379)],
+#         },
+#     },
+# }
+
+
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("redis", 6379)],
+            "hosts": [("127.0.0.1", 6379)],
         },
     },
 }
+
+
+# Strip
+
+STRIP_SECRET_KEY=config('STRIP_SECRET_KEY')
+
+WEB_HOOKS_SECRET_KEY=config('WEB_HOOKS_SECRET_KEY')
+
+
+

@@ -733,19 +733,44 @@ class DashboardUserData(APIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
             
-               
             
-            
-            
-         
-         
-        
-            
+# Get profile pic
 
 
-
-        
-        
+class ProfilePic(APIView):
+    def post(self, request):
+            auth = authorization(request)
+            if auth.user:  
+                user_id = request.data.get('user_id')
+                
+                if not user_id :
+                    return Response({'error':'The argument is not found'}, status=status.HTTP_404_NOT_FOUND)
+                try:
+                    profile_response = client.profile_photo(int(user_id))
+                    return Response({'profile': profile_response.profile_image if profile_response.profile_image else ''}, status=status.HTTP_200_OK)
     
+                except Exception as e:
+                    return Response({
+                        "error": f"An unexpected error occurred: {str(e)}"
+                    }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+                except RpcError as e:
+                    if e.code() == grpc.StatusCode.UNAUTHENTICATED:
+                        return Response("Authentication failed", status=status.HTTP_401_UNAUTHORIZED)
+                    return Response({
+                        "error": f"{e.details()}"
+                    }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+                except Exception as e:
+                    return Response({
+                        "error": f"An unexpected error occurred: {str(e)}"
+                    }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            else:
+                return Response({'error':'Autharization Denied'}, status=status.HTTP_401_UNAUTHORIZED) 
+        
+            
+            
+            
+
 
 
